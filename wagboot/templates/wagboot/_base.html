@@ -1,0 +1,116 @@
+<!DOCTYPE html>{% load compress %}{% load static %}{% load wagtailimages_tags %}{% load wagtailcore_tags %}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="HandheldFriendly" content="True"/>
+  <meta name="MobileOptimized" content="320"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block description %}{{ page.search_description|default:"" }}{% endblock %}"/>
+  <title>{% block head_title %}{% block title %}{{ page.seo_title|default:page.title|default:"" }}{% if request.site.name %} - {{ request.site.name }}{% endif %}{% endblock %}{% endblock %}</title>
+
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha256-7s5uDGW3AHqw6xtJmNNtr+OBRJUlgkNJEo78P4b0yRw= sha512-nNo+yCHEyn0smMxSswnf/OnX6/KwJuZTlNZBjauKhTK0c+zT+q5JOCx0UFhXQ6rJR9jg6Es8gPuD2uZcYDLqSw=="
+        crossorigin="anonymous">
+
+  <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+  <![endif]-->
+
+  {% if settings.wagboot.WebsiteSettings.square_logo %}
+    {% image settings.wagboot.WebsiteSettings.square_logo max-16x16 as icon_16x16 %}
+
+    <link href="{{ icon_16x16.url }}" type="image/vnd.microsoft.icon" rel="shortcut icon" sizes="16x16" title="favicon"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-180x180 as icon_180x180 %}
+    <link href="{{ icon_180x180.url }}" type="image/png" rel="apple-touch-icon" sizes="180x180"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-152x152 as icon_152x152 %}
+    <link href="{{ icon_152x152.url }}" type="image/png" rel="apple-touch-icon" sizes="152x152"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-120x120 as icon_120x120 %}
+    <link href="{{ icon_120x120.url }}" type="image/png" rel="apple-touch-icon" sizes="120x120"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-114x114 as icon_114x114 %}
+    <link href="{{ icon_114x114.url }}" type="image/png" rel="apple-touch-icon" sizes="114x114"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-76x76 as icon_76x76 %}
+    <link href="{{ icon_76x76.url }}" type="image/png" rel="apple-touch-icon" sizes="76x76"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-72x72 as icon_72x72 %}
+    <link href="{{ icon_72x72.url }}" type="image/png" rel="apple-touch-icon" sizes="72x72"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo max-57x57 as icon_57x57 %}
+    <link href="{{ icon_57x57.url }}" type="image/png" rel="apple-touch-icon"/>
+
+    {% image settings.wagboot.WebsiteSettings.square_logo original as icon_original %}
+    <link href="{{ icon_original.url }}" type="image/png" rel="icon" sizes="all"/>
+  {% endif %}
+
+  <style type="text/css">
+    .top-menu .navbar-cta {
+      margin-top: 1em;
+      margin-right: 1em;
+    }
+
+    .top-menu .navbar-cta.navbar-cta-small {
+      position: relative;
+      float: right;
+      display: inline;
+    }
+
+    .top-menu .navbar-cta {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .top-menu .navbar-cta.navbar-cta-small {
+        display: none;
+      }
+      .top-menu .navbar-cta {
+        display: inline;
+      }
+    }
+    .bottom-menu .extra-content {
+      margin-top: 15px;
+    }
+    .bottom-menu.navbar {
+      margin-bottom: 0;
+    }
+
+    .bottom-menu.navbar-static-top {
+      border-bottom: none;
+    }
+  </style>
+
+  {% block extrahead %}{% endblock %}
+  {% autoescape off %}
+{{ settings.wagboot.WebsiteSettings.extra_head|default:"" }}
+  {% endautoescape %}
+  <style type="text/css">
+    {% autoescape off %}
+{{ settings.wagboot.WebsiteSettings.default_css.get_css|default:"" }}
+    {% endautoescape %}
+  </style>
+</head>
+<body class="{% block bodyclass %}{% endblock %} {{ page.body_class }}">
+
+{% block top_menu %}{% endblock %}
+
+{% block content_wrapper %}{% block content %}{% endblock %}{% endblock %}
+
+{% block bottom_menu %}{% endblock %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"
+        integrity="sha256-KXn5puMvxCw+dAYznun+drMdG1IFl3agK0p/pqT9KAo= sha512-2e8qq0ETcfWRI4HJBzQiA3UoyFk6tbNyG+qSaIBZLyW9Xf3sWZHN/lxe9fTh1U45DpPf07yj94KsUHHWe4Yk1A=="
+        crossorigin="anonymous"></script>
+{% block extrabody %}{% endblock %}
+{% autoescape off %}
+  {{ settings.wagboot.WebsiteSettings.extra_body|default:"" }}
+{% endautoescape %}
+</body>
+</html>

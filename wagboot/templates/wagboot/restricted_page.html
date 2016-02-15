@@ -1,0 +1,17 @@
+{% extends 'wagboot/generic_page.html' %}
+
+{% block top_menu %}
+  {% if settings.wagboot.RestrictedPagesSettings.top_menu %}
+    {% include "wagboot/menu/_top.html" with menu=settings.wagboot.RestrictedPagesSettings.top_menu %}
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}
+
+{% block bottom_menu %}
+  {% if settings.wagboot.RestrictedPagesSettings.bottom_menu %}
+    {% include "wagboot/menu/_bottom.html" with menu=settings.wagboot.RestrictedPagesSettings.bottom_menu %}
+  {% else %}
+    {{ block.super }}
+  {% endif %}
+{% endblock %}

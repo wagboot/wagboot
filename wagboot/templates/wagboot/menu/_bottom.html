@@ -1,0 +1,26 @@
+{% comment %}
+
+Used to render bottom menu.
+
+{% include "wagboot/_bottom.html" with menu=settings.wagboot.WebsiteSettings.bottom_menu %}
+
+{% endcomment %}
+
+{% load wagtailcore_tags %}
+
+<nav class="navbar navbar-default navbar-static-top bottom-menu">
+  <div class="container">
+    {% if menu.cta_name or menu.items.exists %}
+      <ul class="nav navbar-nav">
+        {% if menu.cta_name and menu.cta_url %}
+          <li><a href="{{ menu.cta_url }}" class="navbar-cta">{{ menu.cta_name }}</a></li>
+        {% endif %}
+        {% for item in menu.items.all %}
+          <li><a href="{{ item.link }}">{{ item.title }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <div class="navbar-right extra-content">{{ settings.wagboot.WebsiteSettings.bottom_extra_content|richtext }}</div>
+  </div>
+</nav>
+

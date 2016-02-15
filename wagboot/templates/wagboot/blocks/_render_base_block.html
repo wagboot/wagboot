@@ -1,0 +1,88 @@
+
+{% if block.block_type not in choices.STANDALONE_BLOCKS and not block.value.block.standalone %}
+    {# This is not a jumbo block, so we need to open container and row before showing block #}
+    <div class="container">
+      <div class="row generic-page-block generic-page-block-{{ block.block_type }}">
+{% endif %}
+
+{% if block.value.block.is_form_block %}
+{% form_block block %}
+{% elif block.block_type == choices.BLOCK_JUMBOTRON %}
+  {% image block.value.background_image original as background_image %}
+
+  <div class="jumbotron jumbotron-{{ block.value.text_align }} generic-page-block-{{ block.block_type }}"
+      {% if block.value.background_image %}
+        style="background-image: url({{ background_image.url }}); background-repeat: no-repeat; background-position: center top; background-size: cover;"
+      {% endif %}>
+    <div class="container">
+      <div class="row">
+        {% if block.value.text_align == choices.LEFT %}
+          <div class="col-md-4 col-xs-8 col-sm-6">{{ block.value.text|richtext }}</div>
+        {% elif block.value.text_align == choices.LEFT_FULL %}
+          <div class="col-md-12">{{ block.value.text|richtext }}</div>
+        {% elif block.value.text_align == choices.RIGHT %}
+          <div class="col-md-4 col-xs-8 col-sm-6 col-md-offset-8 col-xs-offset-4 col-sm-offset-6 generic-page-right">{{ block.value.text|richtext }}</div>
+        {% elif block.value.text_align == choices.CENTER %}
+          <div class="col-md-12 generic-page-center">{{ block.value.text|richtext }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% elif block.block_type == choices.BLOCK_FEATURES_CAROUSEL %}
+  <div class="jumbotron generic-page-block-{{ block.block_type }}">
+    <div class="container">
+      <div class="row feature-block-overview">
+        {% for feature in block.value %}
+          <div class="col-md-4 col-xs-6 feature-block feature-block-more-activate" data-panel="{{ forloop.counter0 }}">
+            {% image feature.image width-100 class="feature-block-image" %}
+            <h2 class="feature-block-header">{{ feature.header }}</h2>
+            <p class="feature-block-short-text">{{ feature.short_text }}</p>
+            <span class="feature-block-more">Read more</span>
+          </div>
+        {% endfor %}
+      </div>
+      {% for feature in block.value %}
+        <div class="row feature-block-panel feature-block-panel-{{ forloop.counter0 }}" style="display: none">
+          <div class="col-md-2 feature-block-back">
+            {% image feature.image width-100 class="feature-block-image" %}
+            <div class="feature-block-back-activate">&Larr; <span>Overview</span></div>
+          </div>
+          <div class="col-md-10">
+            <h2 class="feature-block-header">{{ feature.header }}</h2>
+            {% for line in feature.long_text.splitlines %}
+              <p class="feature-block-long-text">{{ line }}</p>
+            {% endfor %}
+            <div class="row feature-block-others">
+              {% for subfeature in block.value  %}
+                <div class="col-md-6 col-xs-6 feature-block-more-activate feature-block-small-more feature-block-small-more-{{ forloop.counter0 }}"
+                     data-panel="{{ forloop.counter0 }}">{% image subfeature.image width-40 class="feature-block-image-small" %}
+                  {{ subfeature.header }}</div>
+
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  {% if block.block_type == choices.BLOCK_TEXT_SMALL_IMAGE %}
+      <div class="col-md-10 col-xs-9">{{ block.value.text|richtext }}</div>
+      <div class="col-md-2 col-xs-3">{% image block.value.image width-100 %}</div>
+  {% elif block.block_type == choices.BLOCK_SMALL_IMAGE_TEXT %}
+      <div class="col-md-2 col-xs-3">{% image block.value.image width-100 style="display:block;margin-left:auto;margin-right:0" %}</div>
+      <div class="col-md-10 col-xs-9">{{ block.value.text|richtext }}</div>
+  {% elif block.block_type == choices.BLOCK_IMAGE_TEXT %}
+      <div class="col-md-6">{% image block.value.image width-400 style="display:block;margin-left:auto;margin-right:auto" %}</div>
+      <div class="col-md-6">{{ block.value.text|richtext }}</div>
+  {% elif block.block_type == choices.BLOCK_TEXT_IMAGE %}
+      <div class="col-md-6">{{ block.value.text|richtext }}</div>
+      <div class="col-md-6">{% image block.value.image width-400 style="display:block;margin-left:auto;margin-right:auto" %}</div>
+  {% elif block.block_type == choices.BLOCK_TEXT %}
+    <div class="col-md-12 generic-page-{{ block.value.text_align }}">{{ block.value.text|richtext }}</div>
+  {% endif %}
+{% endif %}
+{% if block.block_type not in choices.STANDALONE_BLOCKS and not block.value.block.standalone %}
+  {#      This was not a jumbo block, need to close row and container #}
+  </div></div>
+{% endif %}

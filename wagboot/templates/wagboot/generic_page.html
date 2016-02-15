@@ -1,0 +1,114 @@
+{% extends "wagboot/_base.html" %}
+
+{% load wagtailimages_tags %}{% load wagtailcore_tags %}{% load compress %}{% load form_block %}
+
+{% block extrabody %}
+  {% compress js %}
+    <script type="text/javascript">
+      $(function () {
+        var $overview = $('.feature-block-overview');
+        var $all_panels = $('.feature-block-panel');
+        var $all_small_blocks = $('.feature-block-small-more');
+        var duration = 400;
+
+        $('.feature-block-more-activate').on('click', function featureReadMore(event) {
+          var $event_target = $(event.target);
+          console.log($event_target);
+          var panel = $event_target.attr('data-panel');
+          console.log("panel: " + panel);
+          if (panel === undefined) {
+            panel = $event_target.closest('.feature-block-more-activate').attr('data-panel');
+            console.log("panel: " + panel);
+          }
+
+          var $this_panel = $('.feature-block-panel-' + panel);
+
+          if ($this_panel.css('display') != 'none') {
+            return;
+          }
+          $all_small_blocks.show();
+          $('.feature-block-small-more-' + panel).hide();
+
+          // Hide all visible sub-panels, quickly
+          $all_panels.slideUp(duration);
+
+          // Hide chooser-panel slowly
+          $overview.slideUp(duration);
+
+          // Show our detail panel slowly
+          $this_panel.slideDown(duration);
+        });
+        $('.feature-block-back-activate').on('click', function featureBack(event) {
+          $all_panels.slideUp(duration/2);
+          $overview.slideDown(duration);
+        });
+      });
+    </script>
+  {% endcompress %}
+{% endblock %}
+
+{% block extrahead %}
+  {% compress css %}
+    <style type="text/css">
+
+      .richtext-image.inline {
+        display: inline;
+      }
+
+      .richtext-image.right {
+        float: right;
+        margin-left: 1em;
+      }
+      .richtext-image.left {
+        float: left;
+        margin-right: 1em;
+      }
+
+      .richtext-image.full-width, .richtext-image.centered {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+
+      .generic-page-center {
+        text-align: center;
+      }
+
+      .generic-page-block {
+        margin-bottom: 1em;
+      }
+      .feature-block, .feature-block-back {
+        text-align: center;
+      }
+      .feature-block-image {
+        margin-bottom: 1em;
+      }
+      .feature-block-image-small {
+        margin-right: 1em;
+      }
+
+      .feature-block-back-activate {
+        cursor: pointer;
+      }
+      .feature-block-back-activate span, .feature-block-more {
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    </style>
+  {% endcompress %}
+{% endblock %}
+
+{% block top_menu %}
+  {% include "wagboot/menu/_top.html" with menu=settings.wagboot.WebsiteSettings.top_menu %}
+{% endblock %}
+
+{% block content %}
+  {% for block in page.body %}
+    {% include "wagboot/blocks/_render_base_block.html" with block=block %}
+  {% endfor %}
+{% endblock %}
+
+{% block bottom_menu %}
+  {% include "wagboot/menu/_bottom.html" with menu=settings.wagboot.WebsiteSettings.bottom_menu %}
+{% endblock %}
+

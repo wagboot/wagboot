@@ -1,0 +1,11 @@
+{% extends "wagboot/generic_page.html" %}
+
+{% block content %}
+  {% for block in page.body %}
+    {% if block.block_type == MY_CUSTOM_BLOCK %}
+      [ render it here ]
+    {% else %}
+      {% include "wagboot/blocks/_render_base_block.html" with block=block %}
+    {% endif %}
+  {% endfor %}
+{% endblock %}

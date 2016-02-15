@@ -1,0 +1,35 @@
+{% comment %}
+
+Used to render top menu.
+
+{% include "wagboot/_top.html" with menu=settings.wagboot.WebsiteSettings.top_menu %}
+
+{% endcomment %}
+
+{% load wagtailimages_tags %}
+
+<nav class="navbar navbar-default navbar-static-top top-menu">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      {% if menu.cta_name and menu.cta_url %}
+        <a href="{{ menu.cta_url }}" class="navbar-cta navbar-cta-small">{{ menu.cta_name }}</a>
+      {% endif %}
+      <a class="navbar-brand" href="/">{% if settings.wagboot.WebsiteSettings.menu_logo %}
+        {% image settings.wagboot.WebsiteSettings.menu_logo original class="logo" %}{% endif %}</a>
+    </div>
+    <div class="collapse navbar-collapse" id="navbar-collapse">
+      <ul class="nav navbar-nav">
+        {% for item in menu.items.all %}
+          <li><a href="{{ item.link }}">{{ item.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% if menu.cta_name and menu.cta_url %}
+        <a href="{{ menu.cta_url }}" class="navbar-cta pull-right">{{ menu.cta_name }}</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,7 @@
+include RELEASE-VERSION
+include README.md
+include LICENSE
+graft wagboot/templates
+graft wagboot/templates/wagboot
+graft wagboot/templates/wagboot/blocks
+graft wagboot/templates/wagboot/menu
