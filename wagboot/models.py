@@ -29,7 +29,7 @@ from wagboot.managers import MenuManager, CssManager
 
 @python_2_unicode_compatible
 class MenuItem(Orderable, models.Model):
-    parent = ParentalKey(to='website.Menu', related_name='items')
+    parent = ParentalKey(to='wagboot.Menu', related_name='items')
     title = models.CharField(max_length=50)
     link_external = models.CharField("External link", blank=True, null=True, max_length=255)
     link_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+')
