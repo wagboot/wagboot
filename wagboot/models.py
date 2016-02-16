@@ -14,7 +14,7 @@ from wagtail.contrib.settings.models import BaseSetting
 from wagtail.contrib.settings.registry import register_setting
 from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, InlinePanel, PageChooserPanel
 from wagtail.wagtailcore import blocks
-from wagtail.wagtailcore.fields import RichTextField, StreamField
+from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtaildocs.edit_handlers import DocumentChooserPanel
 from wagtail.wagtailimages.blocks import ImageChooserBlock
@@ -192,7 +192,8 @@ class BaseGenericPage(Page):
 
 
 class AbstractGenericPage(BaseGenericPage):
-    body = StreamField(BASE_BLOCKS)
+    # You need to create body field like so:
+    # body = StreamField(BASE_BLOCKS + CUSTOM_BLOCKS)
 
     class Meta:
         abstract = True
@@ -204,7 +205,8 @@ class AbstractGenericPage(BaseGenericPage):
 
 
 class AbstractRestrictedPage(BaseGenericPage):
-    body = StreamField(BASE_BLOCKS)
+    # You need to create body field like so:
+    # body = StreamField(BASE_BLOCKS + CUSTOM_BLOCKS)
 
     class Meta(object):
         abstract = True
