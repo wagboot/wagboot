@@ -90,10 +90,31 @@ class FormBlockMixin(FormMixin):
     def form_invalid(self, form):
         raise ValueError("form_invalid is not used in FormBlock")
 
-    def process_and_render(self, value, page_context):
+    def _is_data_present(self):
+        """
+        Checks that fields with this form's prefix are present in submission.
+        If not - this POST request is not for this form.
+        :return: bool
+        """
+        if not self.prefix:
+            return True
+        return any(key.startswith(self.prefix) for key in self.request.POST.keys())
+
+    def get_form_kwargs(self):
+        kwargs = super(FormBlockMixin, self).get_form_kwargs()
+        if not self._is_data_present():
+            # This is not our data :-( It is for some other form block on the page
+            if 'data' in kwargs:
+                del kwargs['data']
+            if 'files' in kwargs:
+                del kwargs['files']
+        return kwargs
+
+    def process_and_render(self, value, page_context, prefix):
         self.request = page_context['request']
+        self.prefix = prefix
         form = self.get_form()
-        if self.request.method.lower() == 'post':
+        if self.request.method.lower() == 'post' and self._is_data_present():
             if form.is_valid():
                 should_be_empty = self.form_valid(form)
                 if should_be_empty is not None:
