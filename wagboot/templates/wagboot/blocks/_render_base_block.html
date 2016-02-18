@@ -1,3 +1,4 @@
+{% load wagtailimages_tags %}{% load wagtailcore_tags %}{% load form_block %}
 
 {% if block.block_type not in choices.STANDALONE_BLOCKS and not block.value.block.standalone %}
     {# This is not a jumbo block, so we need to open container and row before showing block #}
