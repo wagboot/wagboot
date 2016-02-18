@@ -134,6 +134,13 @@ class Css(ClusterableModel):
             self._compiled_css = "/*{}*/".format(e)
         super(Css, self).save(**kwargs)
 
+try:
+    from reversion import revisions as reversion
+    reversion.register(Css)
+except ImportError:
+    # django_reversion is not available
+    pass
+
 BASE_BLOCKS = [
     (choices.BLOCK_JUMBOTRON, blocks.StructBlock([
         ('text', blocks.RichTextBlock()),
