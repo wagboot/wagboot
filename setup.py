@@ -9,4 +9,4 @@ setup(name='wagboot',
       version=get_git_version(),
       packages=find_packages(),
       include_package_data=True,
-      install_requires=['wagtail>=1.3.1', 'django>=1.8.0', 'libsass==0.10.1'])
+      install_requires=['wagtail>=1.3.1', 'django>=1.8.0', 'libsass==0.10.1', 'six'])

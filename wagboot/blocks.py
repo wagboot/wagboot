@@ -5,7 +5,8 @@ from functools import wraps
 
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
-from django.views.generic.edit import FormMixin
+from django.views.generic.edit import FormMixin, FormMixinBase
+from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
 
 from wagboot import choices
 
@@ -39,6 +40,10 @@ def check_redirect(f):
     return wrapper
 
 
+class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
+    pass
+
+
 class FormBlockMixin(FormMixin):
     """
     Block that can process form data during rendering.
@@ -63,6 +68,15 @@ class FormBlockMixin(FormMixin):
             process blocks as usual.
         {% endif %}
     {% endfor %}
+
+    Form block should be created this way:
+
+    import six
+    from wagtail.wagtailcore import blocks
+
+    class MyStructFormBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
+        form_class = ...
+
     """
     is_form_block = True
 
@@ -77,9 +91,9 @@ class FormBlockMixin(FormMixin):
         raise ValueError("form_invalid is not used in FormBlock")
 
     def process_and_render(self, value, page_context):
-        request = page_context['request']
+        self.request = page_context['request']
         form = self.get_form()
-        if request.method.lower() == 'post':
+        if self.request.method.lower() == 'post':
             if form.is_valid():
                 should_be_empty = self.form_valid(form)
                 if should_be_empty is not None:
