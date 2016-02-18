@@ -24,7 +24,7 @@ Used to render top menu.
     <div class="collapse navbar-collapse" id="navbar-collapse">
       <ul class="nav navbar-nav">
         {% for item in menu.items.all %}
-          <li><a href="{{ item.link }}">{{ item.title }}</a></li>
+          <li{% if item.link == request.path %} class="active"{% endif %}><a href="{{ item.link }}">{{ item.title }}</a></li>
         {% endfor %}
       </ul>
       {% if menu.cta_name and menu.cta_url %}
