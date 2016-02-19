@@ -2,10 +2,10 @@
 from __future__ import absolute_import, unicode_literals
 
 import sass
-from django.contrib.auth.decorators import login_required
+from django.conf import settings
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils.decorators import method_decorator
 from django_ace import AceWidget
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -218,8 +218,19 @@ class AbstractRestrictedPage(BaseGenericPage):
     class Meta(object):
         abstract = True
 
-    @method_decorator(login_required)
+    def _get_login_url(self, request):
+        login_url = settings.LOGIN_URL
+        try:
+            restricted_pages_settings = RestrictedPagesSettings.for_site(request.site)
+            if restricted_pages_settings.login_page:
+                login_url = restricted_pages_settings.login_page.url
+        except RestrictedPagesSettings.DoesNotExist:
+            pass
+        return login_url
+
     def serve(self, request, *args, **kwargs):
+        if not request.user.is_authenticated():
+            return redirect_to_login(self.url, login_url=self._get_login_url(request))
         return super(AbstractRestrictedPage, self).serve(request, *args, **kwargs)
 
 
@@ -283,7 +294,16 @@ class RestrictedPagesSettings(BaseSetting):
     bottom_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
                                     help_text="To show separate bottom menu on restricted pages (optional)")
 
+    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+')
+
     panels = [
         SnippetChooserPanel('top_menu'),
         SnippetChooserPanel('bottom_menu'),
+        PageChooserPanel('login_page')
     ]
+
+    def full_clean(self, exclude=None, validate_unique=True):
+        # Login url should not be a restricted page itself
+        if self.login_page and issubclass(self.login_page.specific_class, AbstractRestrictedPage):
+            raise ValidationError({'login_page': "Login page should not be a restricted page"})
+
