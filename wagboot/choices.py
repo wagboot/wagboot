@@ -17,12 +17,14 @@ JUMBOTRON_ALIGN_CHOICES = [
     (RIGHT, 'Right'),
     (LEFT_FULL, 'Left, full width'),
 ]
-BLOCK_JUMBOTRON = 'jumbotron'
-BLOCK_TEXT_SMALL_IMAGE = 'text_small_image'
-BLOCK_SMALL_IMAGE_TEXT = 'small_image_text'
-BLOCK_IMAGE_TEXT = 'image_text'
-BLOCK_TEXT_IMAGE = 'text_image'
-BLOCK_TEXT = 'text'
 BLOCK_FEATURES_CAROUSEL = 'features_carousel'
+BLOCK_IMAGE_TEXT = 'image_text'
+BLOCK_JUMBOTRON = 'jumbotron'
+BLOCK_LOGIN = 'login'
+BLOCK_LOGOUT = 'logout'
+BLOCK_SMALL_IMAGE_TEXT = 'small_image_text'
+BLOCK_TEXT = 'text'
+BLOCK_TEXT_IMAGE = 'text_image'
+BLOCK_TEXT_SMALL_IMAGE = 'text_small_image'
 
 STANDALONE_BLOCKS = [BLOCK_JUMBOTRON, BLOCK_FEATURES_CAROUSEL]

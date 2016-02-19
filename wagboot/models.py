@@ -26,7 +26,7 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import check_redirect
+from wagboot.blocks import LoginBlock, LogoutBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -178,6 +178,11 @@ BASE_BLOCKS = [
     ]), label="Features Carousel")),
 ]
 
+GENERIC_PAGE_BLOCKS = [
+    (choices.BLOCK_LOGIN, LoginBlock()),
+    (choices.BLOCK_LOGOUT, LogoutBlock()),
+]
+
 
 class BaseGenericPage(Page):
     class Meta(object):
@@ -196,14 +201,18 @@ class BaseGenericPage(Page):
 
         return context
 
-    @check_redirect
     def serve(self, request, *args, **kwargs):
+        for num, stream_block in enumerate(self.body):
+            if hasattr(stream_block.block, 'process_request'):
+                result = stream_block.block.process_request(request, stream_block.value, "form-{}".format(num))
+                if result:
+                    return result
         return super(BaseGenericPage, self).serve(request, *args, **kwargs)
 
 
 class AbstractGenericPage(BaseGenericPage):
     # You need to create body field like so:
-    # body = StreamField(BASE_BLOCKS + CUSTOM_BLOCKS)
+    # body = StreamField(BASE_BLOCKS + GENERIC_PAGE_BLOCKS + YOUR_CUSTOM_BLOCKS)
 
     class Meta:
         abstract = True
@@ -211,12 +220,12 @@ class AbstractGenericPage(BaseGenericPage):
 # Example of page:
 #
 # class GenericPage(AbstractGenericPage):
-#     body = StreamField(BASE_BLOCKS + CUSTOM_BLOCKS)
+#     body = StreamField(BASE_BLOCKS + GENERIC_PAGE_BLOCKS + YOUR_CUSTOM_BLOCKS)
 
 
 class AbstractRestrictedPage(BaseGenericPage):
     # You need to create body field like so:
-    # body = StreamField(BASE_BLOCKS + CUSTOM_BLOCKS)
+    #     body = StreamField(BASE_BLOCKS + GENERIC_PAGE_BLOCKS + YOUR_CUSTOM_BLOCKS)
 
     class Meta(object):
         abstract = True
