@@ -6,6 +6,9 @@ from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
 from django_ace import AceWidget
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -228,6 +231,8 @@ class AbstractRestrictedPage(BaseGenericPage):
             pass
         return login_url
 
+    @method_decorator(csrf_protect)
+    @method_decorator(never_cache)
     def serve(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
             return redirect_to_login(self.url, login_url=self._get_login_url(request))
