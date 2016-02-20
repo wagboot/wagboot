@@ -86,6 +86,7 @@ class Menu(ClusterableModel):
     name = models.CharField(max_length=255, null=False, blank=False)
     cta_name = models.CharField(max_length=50, null=True, blank=True)
     cta_url = models.CharField(max_length=250, blank=True, null=True)
+    cta_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+')
 
     def __str__(self):
         return self.name
@@ -94,6 +95,7 @@ class Menu(ClusterableModel):
         FieldPanel('name', classname='full title'),
         InlinePanel('items', label="Menu Items", min_num=1),
         FieldPanel('cta_name'),
+        PageChooserPanel('cta_page'),
         FieldPanel('cta_url'),
     ]
 
