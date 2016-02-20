@@ -12,9 +12,9 @@ Used to render bottom menu.
   <div class="container">
     {% if menu.cta_name or menu.items.exists %}
       <ul class="nav navbar-nav">
-        {% if menu.cta_name %}
+        {% if menu.cta_name or menu.cta_page %}
           {% if menu.cta_page %}
-            <li><a href="{{ menu.cta_page.url }}" class="navbar-cta">{{ menu.cta_name }}</a></li>
+            <li><a href="{{ menu.cta_page.url }}" class="navbar-cta">{{ menu.cta_name|default:menu.cta_page.title }}</a></li>
           {% elif menu.cta_url %}
             <li><a href="{{ menu.cta_url }}" class="navbar-cta">{{ menu.cta_name }}</a></li>
           {% endif %}

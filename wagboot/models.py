@@ -95,10 +95,21 @@ class Menu(ClusterableModel):
     panels = [
         FieldPanel('name', classname='full title'),
         InlinePanel('items', label="Menu Items", min_num=1),
-        FieldPanel('cta_name'),
         PageChooserPanel('cta_page'),
+        FieldPanel('cta_name'),
         FieldPanel('cta_url'),
     ]
+
+    def full_clean(self, exclude=None, validate_unique=True):
+        if self.cta_name and not self.cta_url and not self.cta_page:
+            raise ValidationError({'cta_name': "Set CTA page or URL"})
+        if self.cta_url and not self.cta_name:
+            raise ValidationError({'cta_name': "Set CTA link name"})
+        if self.cta_url and self.cta_url:
+            raise ValidationError({
+                'cta_page': "Only CTA page or URL should be set",
+                'cta_url': "Only CTA page or URL should be set"
+            })
 
 
 @python_2_unicode_compatible

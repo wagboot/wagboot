@@ -27,9 +27,9 @@ Used to render top menu.
           <li{% if item.link == request.path %} class="active"{% endif %}><a href="{{ item.link }}">{{ item.title }}</a></li>
         {% endfor %}
       </ul>
-      {% if menu.cta_name %}
+      {% if menu.cta_name or menu.cta_page %}
         {% if menu.cta_page %}
-          <a href="{{ menu.cta_page.url }}" class="navbar-cta pull-right">{{ menu.cta_name }}</a>
+          <a href="{{ menu.cta_page.url }}" class="navbar-cta pull-right">{{ menu.cta_name|default:menu.cta_page.title }}</a>
         {% elif menu.cta_url %}
           <a href="{{ menu.cta_url }}" class="navbar-cta pull-right">{{ menu.cta_name }}</a>
         {% endif %}
