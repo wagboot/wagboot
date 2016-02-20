@@ -35,8 +35,9 @@ class MenuItem(Orderable, models.Model):
     parent = ParentalKey(to='wagboot.Menu', related_name='items')
     title = models.CharField(max_length=50)
     link_external = models.CharField("External link", blank=True, null=True, max_length=255)
-    link_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+')
-    link_document = models.ForeignKey('wagtaildocs.Document', null=True, blank=True, related_name='+')
+    link_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+', on_delete=models.CASCADE)
+    link_document = models.ForeignKey('wagtaildocs.Document', null=True, blank=True, related_name='+',
+                                      on_delete = models.CASCADE)
     link_email = models.EmailField(blank=True, null=True)
 
     @property
@@ -86,7 +87,7 @@ class Menu(ClusterableModel):
     name = models.CharField(max_length=255, null=False, blank=False)
     cta_name = models.CharField(max_length=50, null=True, blank=True)
     cta_url = models.CharField(max_length=250, blank=True, null=True)
-    cta_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+')
+    cta_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+', on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
@@ -310,7 +311,8 @@ class RestrictedPagesSettings(BaseSetting):
     bottom_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
                                     help_text="To show separate bottom menu on restricted pages (optional)")
 
-    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+')
+    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+',
+                                   on_delete=models.SET_NULL)
 
     panels = [
         SnippetChooserPanel('top_menu'),
