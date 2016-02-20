@@ -33,7 +33,7 @@ from wagboot.managers import MenuManager, CssManager
 @python_2_unicode_compatible
 class MenuItem(Orderable, models.Model):
     parent = ParentalKey(to='wagboot.Menu', related_name='items')
-    title = models.CharField(max_length=50)
+    title = models.CharField(max_length=50, blank=True, null=True)
     link_external = models.CharField("External link", blank=True, null=True, max_length=255)
     link_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+', on_delete=models.CASCADE)
     link_document = models.ForeignKey('wagtaildocs.Document', null=True, blank=True, related_name='+',
@@ -54,11 +54,11 @@ class MenuItem(Orderable, models.Model):
             return '/'
 
     panels = [
-        FieldPanel('title'),
-        FieldPanel('link_external'),
         PageChooserPanel('link_page'),
         DocumentChooserPanel('link_document'),
         FieldPanel('link_email'),
+        FieldPanel('title'),
+        FieldPanel('link_external'),
     ]
 
     @property
@@ -66,10 +66,18 @@ class MenuItem(Orderable, models.Model):
         return self.link
 
     def __str__(self):
-        return self.title
+        if self.title:
+            return self.title
+        if self.link_page:
+            return self.link_page.title
+        if self.link_email:
+            return self.link_email
+        if self.link_document:
+            return self.link_document.title
+        return "(unnamed)"
 
     def full_clean(self, exclude=None, validate_unique=True):
-        fields = ['link_external', 'link_page', 'link_document', 'link_email']
+        fields = ['link_page', 'link_document', 'link_email', 'link_external']
         has_value = False
         for f in fields:
             if getattr(self, f):
@@ -78,6 +86,9 @@ class MenuItem(Orderable, models.Model):
                 has_value = True
         if not has_value:
             raise ValidationError({fields[0]: 'Some link must be provided'})
+
+        if self.link_external and not self.title:
+            raise ValidationError({'title': "External link requires title"})
 
 
 @python_2_unicode_compatible

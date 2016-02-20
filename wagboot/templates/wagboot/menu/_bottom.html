@@ -20,7 +20,7 @@ Used to render bottom menu.
           {% endif %}
         {% endif %}
         {% for item in menu.items.all %}
-          <li><a href="{{ item.link }}">{{ item.title }}</a></li>
+          <li><a href="{{ item.link }}">{{ item }}</a></li>
         {% endfor %}
       </ul>
     {% endif %}
