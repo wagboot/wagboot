@@ -210,21 +210,59 @@ GENERIC_PAGE_BLOCKS = [
 
 
 class BaseGenericPage(Page):
+    top_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+                                 help_text="Specific top menu for this and child pages")
+
+    bottom_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+                                    help_text="Specific bottom menu for this and child pages")
+
     class Meta(object):
         abstract = True
 
     content_panels = Page.content_panels + [
         StreamFieldPanel('body')
     ]
+    settings_panels = Page.settings_panels + [
+        SnippetChooserPanel('top_menu'),
+        SnippetChooserPanel('bottom_menu'),
+    ]
 
     def get_context(self, request, *args, **kwargs):
         context = super(BaseGenericPage, self).get_context(request, *args, **kwargs)
 
         context.update({
-            'choices': choices
+            'choices': choices,
+            'top_menu': self.get_top_menu(),
+            'bottom_menu': self.get_bottom_menu
         })
 
         return context
+
+    def get_top_menu(self):
+        """
+        Goes up the hierarchy of pages and gets first top_menu.
+        :return: Menu
+        """
+        page = self
+        for safety in range(100):
+            if not page:
+                return
+            if page.top_menu:
+                return page.top_menu
+            page = page.get_parent()
+
+    def get_bottom_menu(self):
+        """
+        Goes up the hierarchy of pages and gets first bottom_menu.
+        :return: Menu
+        """
+        page = self
+        for safety in range(100):
+            if not page:
+                return
+            if page.bottom_menu:
+                return page.bottom_menu
+            page = page.get_parent()
 
     def serve(self, request, *args, **kwargs):
         for num, stream_block in enumerate(self.body):
@@ -294,10 +332,6 @@ class WebsiteSettings(BaseSetting):
                                     help_text="Custom CSS to add to HEAD of all pages "
                                               "(after extra_head and bootstrap css, before page css)")
 
-    top_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-                                 help_text="For every generic page (optional)")
-    bottom_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-                                    help_text="For every generic page (optional)")
     bottom_extra_content = RichTextField(help_text="Will be added to the right side of bottom menu",
                                          blank=True, null=True)
     menu_logo = models.ForeignKey('wagtailimages.Image', null=True, on_delete=models.SET_NULL, related_name='+',
@@ -314,8 +348,6 @@ class WebsiteSettings(BaseSetting):
                                             "(each on separate line)")
 
     panels = [
-        SnippetChooserPanel('top_menu'),
-        SnippetChooserPanel('bottom_menu'),
         SnippetChooserPanel('default_css'),
         FieldPanel('bottom_extra_content', classname="full"),
         ImageChooserPanel('menu_logo'),

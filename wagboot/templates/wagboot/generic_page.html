@@ -99,7 +99,7 @@
 {% endblock %}
 
 {% block top_menu %}
-  {% include "wagboot/menu/_top.html" with menu=settings.wagboot.WebsiteSettings.top_menu %}
+  {% include "wagboot/menu/_top.html" with menu=page.get_top_menu %}
 {% endblock %}
 
 {% block content %}
@@ -109,6 +109,6 @@
 {% endblock %}
 
 {% block bottom_menu %}
-  {% include "wagboot/menu/_bottom.html" with menu=settings.wagboot.WebsiteSettings.bottom_menu %}
+  {% include "wagboot/menu/_bottom.html" with menu=page.get_bottom_menu %}
 {% endblock %}
 
