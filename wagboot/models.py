@@ -247,8 +247,9 @@ class BaseGenericPage(Page):
         for safety in range(100):
             if not page:
                 return
-            if hasattr(page, 'top_menu') and page.specific.top_menu:
-                return page.top_menu
+            top_menu = getattr(page.specific, 'top_menu', None)
+            if top_menu:
+                return top_menu
             page = page.get_parent()
 
     def get_bottom_menu(self):
@@ -260,8 +261,9 @@ class BaseGenericPage(Page):
         for safety in range(100):
             if not page:
                 return
-            if hasattr(page, 'bottom_menu') and page.specific.bottom_menu:
-                return page.bottom_menu
+            bottom_menu = getattr(page.specific, 'bottom_menu', None)
+            if bottom_menu:
+                return bottom_menu
             page = page.get_parent()
 
     def serve(self, request, *args, **kwargs):
