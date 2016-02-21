@@ -296,10 +296,10 @@ class AbstractRestrictedPage(BaseGenericPage):
     def _get_login_url(self, request):
         login_url = settings.LOGIN_URL
         try:
-            restricted_pages_settings = RestrictedPagesSettings.for_site(request.site)
-            if restricted_pages_settings.login_page:
-                login_url = restricted_pages_settings.login_page.url
-        except RestrictedPagesSettings.DoesNotExist:
+            website_settings = WebsiteSettings.for_site(request.site)
+            if website_settings.login_page:
+                login_url = website_settings.login_page.url
+        except WebsiteSettings.DoesNotExist:
             pass
         return login_url
 
@@ -347,6 +347,9 @@ class WebsiteSettings(BaseSetting):
                                   help_text="robots.txt file. Default: Allow /\nDisallow /cms\nDisallow /admin\n "
                                             "(each on separate line)")
 
+    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+',
+                                   on_delete=models.SET_NULL, help_text="Login page for restricted pages")
+
     panels = [
         SnippetChooserPanel('default_css'),
         FieldPanel('bottom_extra_content', classname="full"),
@@ -354,28 +357,11 @@ class WebsiteSettings(BaseSetting):
         ImageChooserPanel('square_logo'),
         FieldPanel('extra_head', classname="full"),
         FieldPanel('extra_body', classname="full"),
-        FieldPanel('robots_txt', classname="full")
-    ]
-
-
-@register_setting
-class RestrictedPagesSettings(BaseSetting):
-    top_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-                                 help_text="To show separate menu on restricted pages (optional)")
-    bottom_menu = models.ForeignKey(Menu, null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
-                                    help_text="To show separate bottom menu on restricted pages (optional)")
-
-    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+',
-                                   on_delete=models.SET_NULL)
-
-    panels = [
-        SnippetChooserPanel('top_menu'),
-        SnippetChooserPanel('bottom_menu'),
-        PageChooserPanel('login_page')
+        FieldPanel('robots_txt', classname="full"),
+        PageChooserPanel('login_page'),
     ]
 
     def full_clean(self, exclude=None, validate_unique=True):
         # Login url should not be a restricted page itself
         if self.login_page and issubclass(self.login_page.specific_class, AbstractRestrictedPage):
-            raise ValidationError({'login_page': "Login page should not be a restricted page"})
-
+            raise ValidationError({"login_page": "Login page should not be a restricted page"})
