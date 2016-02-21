@@ -247,7 +247,7 @@ class BaseGenericPage(Page):
         for safety in range(100):
             if not page:
                 return
-            if page.top_menu:
+            if hasattr(page, 'top_menu') and page.specific.top_menu:
                 return page.top_menu
             page = page.get_parent()
 
@@ -260,7 +260,7 @@ class BaseGenericPage(Page):
         for safety in range(100):
             if not page:
                 return
-            if page.bottom_menu:
+            if hasattr(page, 'bottom_menu') and page.specific.bottom_menu:
                 return page.bottom_menu
             page = page.get_parent()
 
