@@ -177,6 +177,14 @@ class LogoutBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.
         if self.block_value['next_page']:
             next_url = self.block_value['next_page'].url
         return next_url
+    
+    def get_context(self, value):
+        context = super(FormBlockMixin, self).get_context(value)
+        context.update({
+            'request': self.request,
+            'user': self.request.user,
+        })
+        return context
 
     def process_request(self, request, value, prefix):
         self.request = request
