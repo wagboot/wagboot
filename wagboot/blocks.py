@@ -67,12 +67,11 @@ class FormBlockMixin(BlockMixin, FormMixin):
         form_class = ...
 
     """
-    _rendered_content = None
 
     def render(self, value):
-        if not self._rendered_content:
+        if not value._rendered_content:
             raise ValueError("Before rendering content process_request should have been called")
-        return self._rendered_content
+        return value._rendered_content
 
     def form_invalid(self, form):
         raise ValueError("form_invalid is not used in FormBlock")
@@ -114,7 +113,9 @@ class FormBlockMixin(BlockMixin, FormMixin):
         })
 
         if template:
-            self._rendered_content = render_to_string(template, context)
+            if hasattr(self.block_value, '_rendered_content'):
+                raise ValueError("Rendered content already exists, this is a bug")
+            self.block_value._rendered_content = render_to_string(template, context)
         else:
             raise ValueError("This block must have a template")
 
