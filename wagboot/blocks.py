@@ -209,6 +209,7 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
 
 class LoginBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
     default_next_page = blocks.PageChooserBlock()
+    legend = blocks.RichTextBlock(required=False, help_text="Text to the right of login form")
 
     form_class = AuthenticationForm
 
