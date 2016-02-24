@@ -18,24 +18,109 @@ from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
 from wagboot import choices
 
 
-class BlockMixin(object):
+_RENDERED_CONTENT = 'wagboot_rendered_content'
+
+
+class ProcessBlockMixin(object):
     self_render = True
     standalone = False
 
     def get_context(self, value):
-        context = super(BlockMixin, self).get_context(value)
+        context = super(ProcessBlockMixin, self).get_context(value)
 
         context.update({
             'choices': choices
         })
         return context
 
+    def get_media(self, request, value, prefix):
+        """
+        Can provide additional media to extrahead block.
+        """
+        self.save_request_data(request, value, prefix)
+
+    def render(self, value):
+        content = getattr(value, _RENDERED_CONTENT)
+        if not content:
+            raise ValueError("Rendered content was not found, this is a bug")
+        return content
+
+    def pre_render_action(self):
+        """
+        Will be called before rendering template.
+        Can do some actions and return HttpResponse that will returned instead of the whole page.
+        If just renders the page must return None.
+        Should be overridden, by default does nothing.
+
+        All properties added to self must be cleaned in after_render_cleanup (blocks instances are shared).
+        :return:
+        """
+        return None
+
+    def after_render_cleanup(self):
+        """
+        Will be called after rendering block if some property should be cleaned up.
+        (Block is shared between block instances on the page)
+        """
+        del self.request
+        del self.prefix
+        del self.block_value
+
+    def save_request_data(self, request, value, prefix):
+        self.request = request
+        self.prefix = prefix
+        self.block_value = value
+
+    def get_context(self, value):
+        context = super(ProcessBlockMixin, self).get_context(value)
+        context.update({
+            'request': self.request,
+            'user': self.request.user,
+            'prefix': self.prefix
+        })
+        return context
+
+
+
+    def process_request(self, request, value, prefix):
+        """
+        Will be called by BaseGenericPage before rendering all blocks.
+        If it returns HttpResponse (from pre_render_action) this response will be served instead of the page.
+
+        :param request: HttpRequest
+        :param value: Block value
+        :param prefix: prefix (for forms), unique for every block on page.
+        :return: None or HttpResponse
+        """
+        try:
+            self.save_request_data(request, value, prefix)
+
+            template = getattr(self.meta, 'template', None)
+            if not template:
+                raise ValueError("This block must have a template")
+
+            try:
+                response = self.pre_render_action()
+                if response:
+                    return response
+            except ValidationError as e:
+                for error in e.messages:
+                    messages.error(request, "{}".format(error))
+
+            context = self.get_context(value)
+
+            if getattr(self.block_value, _RENDERED_CONTENT, None):
+                raise ValueError("Rendered content already exists, this is a bug")
+            setattr(value, _RENDERED_CONTENT, render_to_string(template, context))
+        finally:
+            self.after_render_cleanup()
+
 
 class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
     pass
 
 
-class FormBlockMixin(BlockMixin, FormMixin):
+class FormBlockMixin(ProcessBlockMixin, FormMixin):
     """
     Block that can process form data during rendering.
 
@@ -70,15 +155,16 @@ class FormBlockMixin(BlockMixin, FormMixin):
 
     """
 
-    def render(self, value):
-        if not value._rendered_content:
-            raise ValueError("Before rendering content process_request should have been called")
-        return value._rendered_content
-
-    def get_media(self):
+    def get_media(self, request, value, prefix):
+        media = super(FormBlockMixin, self).get_media(request, value, prefix)
         form_class = self.get_form_class()
         if form_class:
-            return self.get_form(form_class).media
+            form_media = self.get_form(form_class).media
+            if media:
+                media += form_media
+            else:
+                media = form_media
+        return media
 
     def form_invalid(self, form):
         raise ValueError("form_invalid is not used in FormBlock")
@@ -103,32 +189,22 @@ class FormBlockMixin(BlockMixin, FormMixin):
                 del kwargs['files']
         return kwargs
 
-    def process_request(self, request, value, prefix):
-        self.request = request
-        self.prefix = prefix
-        self.block_value = value
-        form = self.get_form()
+    def pre_render_action(self):
+        self.form = self.get_form()
         if self.request.method.lower() == 'post' and self._is_data_present():
-            if form.is_valid():
-                try:
-                    return self.form_valid(form)
-                except ValidationError as e:
-                    for error in e.messages:
-                        messages.error(request, error)
+            if self.form.is_valid():
+                return self.form_valid(self.form)
 
-        template = getattr(self.meta, 'template', None)
+    def after_render_cleanup(self):
+        super(FormBlockMixin, self).after_render_cleanup()
+        del self.form
 
-        context = self.get_context(value)
+    def get_context(self, value):
+        context = super(FormBlockMixin, self).get_context(value)
         context.update({
-            'form': form
+            'form': self.form
         })
-
-        if template:
-            if hasattr(self.block_value, '_rendered_content'):
-                raise ValueError("Rendered content already exists, this is a bug")
-            self.block_value._rendered_content = render_to_string(template, context)
-        else:
-            raise ValueError("This block must have a template")
+        return context
 
 
 class LoginBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
@@ -170,7 +246,7 @@ class LoginBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.S
         return redirect_to
 
 
-class LogoutBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
+class LogoutBlock(ProcessBlockMixin, blocks.StructBlock):
     confirm_logout = blocks.BooleanBlock(default=True,
                                          required=False,
                                          help_text="Show page before log out")
@@ -189,31 +265,8 @@ class LogoutBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.
         if self.block_value['next_page']:
             next_url = self.block_value['next_page'].url
         return next_url
-    
-    def get_context(self, value):
-        context = super(FormBlockMixin, self).get_context(value)
-        context.update({
-            'request': self.request,
-            'user': self.request.user,
-        })
-        return context
 
-    def process_request(self, request, value, prefix):
-        self.request = request
-        self.prefix = prefix
-        self.block_value = value
-
-        if self.request.method.lower() == 'post' and self._is_data_present():
-            logout(request)
+    def pre_render_action(self):
+        if self.request.method.lower() == 'post' and self.request.POST.get('{}-logout'.format(self.prefix)):
+            logout(self.request)
             return HttpResponseRedirect(self.get_success_url())
-
-        template = getattr(self.meta, 'template', None)
-
-        context = self.get_context(value)
-        context.update({
-            'prefix': self.prefix,
-        })
-
-        self._rendered_content = render_to_string(template, context)
-
-        return None

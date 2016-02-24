@@ -25,7 +25,7 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock
+from wagboot.blocks import LoginBlock, LogoutBlock, ProcessBlockMixin
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -266,20 +266,22 @@ class BaseGenericPage(Page):
                 return bottom_menu
             page = page.get_parent()
 
-    extra_media = []
-
     def serve(self, request, *args, **kwargs):
-        self.extra_media = []
-        for num, stream_block in enumerate(self.body):
-            if hasattr(stream_block.block, 'process_request'):
-                result = stream_block.block.process_request(request, stream_block.value, "form-{}".format(num))
-                if result:
-                    return result
-            if hasattr(stream_block.block, 'get_media'):
-                media = stream_block.block.get_media()
-                if media:
-                    self.extra_media.append(media)
-        return super(BaseGenericPage, self).serve(request, *args, **kwargs)
+        try:
+            self.extra_media = []
+            for num, stream_block in enumerate(self.body):
+                if isinstance(stream_block.block, ProcessBlockMixin):
+                    prefix = "block-{}".format(num)
+                    result = stream_block.block.process_request(request, stream_block.value, prefix)
+                    if result:
+                        return result
+                    media = stream_block.block.get_media(request, stream_block.value, prefix)
+                    if media:
+                        self.extra_media.append(media)
+            return super(BaseGenericPage, self).serve(request, *args, **kwargs)
+        finally:
+            # If this object is ever shared do not leave old data around
+            del self.extra_media
 
 
 class AbstractGenericPage(BaseGenericPage):
