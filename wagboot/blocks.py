@@ -3,8 +3,10 @@ from __future__ import absolute_import, unicode_literals
 
 import six
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME, login, logout
 from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
 from django.template.loader import render_to_string
@@ -73,6 +75,11 @@ class FormBlockMixin(BlockMixin, FormMixin):
             raise ValueError("Before rendering content process_request should have been called")
         return value._rendered_content
 
+    def get_media(self):
+        form_class = self.get_form_class()
+        if form_class:
+            return self.get_form(form_class).media
+
     def form_invalid(self, form):
         raise ValueError("form_invalid is not used in FormBlock")
 
@@ -103,7 +110,11 @@ class FormBlockMixin(BlockMixin, FormMixin):
         form = self.get_form()
         if self.request.method.lower() == 'post' and self._is_data_present():
             if form.is_valid():
-                return self.form_valid(form)
+                try:
+                    return self.form_valid(form)
+                except ValidationError as e:
+                    for error in e.messages:
+                        messages.error(request, error)
 
         template = getattr(self.meta, 'template', None)
 

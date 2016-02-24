@@ -8,7 +8,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_protect
 from django_ace import AceWidget
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -233,7 +232,8 @@ class BaseGenericPage(Page):
         context.update({
             'choices': choices,
             'top_menu': self.get_top_menu(),
-            'bottom_menu': self.get_bottom_menu
+            'bottom_menu': self.get_bottom_menu,
+            'extra_media': self.extra_media
         })
 
         return context
@@ -266,12 +266,19 @@ class BaseGenericPage(Page):
                 return bottom_menu
             page = page.get_parent()
 
+    extra_media = []
+
     def serve(self, request, *args, **kwargs):
+        self.extra_media = []
         for num, stream_block in enumerate(self.body):
             if hasattr(stream_block.block, 'process_request'):
                 result = stream_block.block.process_request(request, stream_block.value, "form-{}".format(num))
                 if result:
                     return result
+            if hasattr(stream_block.block, 'get_media'):
+                media = stream_block.block.get_media()
+                if media:
+                    self.extra_media.append(media)
         return super(BaseGenericPage, self).serve(request, *args, **kwargs)
 
 
@@ -305,7 +312,7 @@ class AbstractRestrictedPage(BaseGenericPage):
             pass
         return login_url
 
-    @method_decorator(csrf_protect)
+    # @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def serve(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
