@@ -101,6 +101,12 @@
 
 {% block top_menu %}{% endblock %}
 
+{% for message in messages %}
+<div class="alert alert-{{ message.level_tag }}" role="alert">
+  <div class="container">{{ message }}</div>
+</div>
+{% endfor %}
+
 {% block content_wrapper %}{% block content %}{% endblock %}{% endblock %}
 
 {% block bottom_menu %}{% endblock %}
@@ -110,7 +116,7 @@
         crossorigin="anonymous"></script>
 {% block extrabody %}{% endblock %}
 {% autoescape off %}
-  {{ settings.wagboot.WebsiteSettings.extra_body|default:"" }}
+{{ settings.wagboot.WebsiteSettings.extra_body|default:"" }}
 {% endautoescape %}
 </body>
 </html>
