@@ -271,3 +271,43 @@ class LogoutBlock(ProcessBlockMixin, blocks.StructBlock):
         if self.request.method.lower() == 'post' and self.request.POST.get('{}-logout'.format(self.prefix)):
             logout(self.request)
             return HttpResponseRedirect(self.get_success_url())
+
+
+class Empty(object):
+    """
+    Empty object to let NoFieldsBlock work with rendered content on it.
+    """
+    pass
+
+
+class NoFieldsBlock(ProcessBlockMixin, blocks.Block):
+    """
+    Used to show some data based on logged-in user (or request) but which does not have any additional setting.
+    In wagtail page editing shows label and help_text.
+    """
+
+    class Meta:
+        # Set these fields:
+        # label =
+        # help_text =
+        # icon =
+        # template =
+        default = Empty()
+        form_classname = ''
+        form_template = "wagboot/blocks/no_fields_form.html"
+
+    def to_python(self, value):
+        return Empty()
+
+    def get_prep_value(self, value):
+        return {}
+
+    def value_from_datadict(self, data, files, prefix):
+        return Empty()
+
+    def render_form(self, value, prefix='', errors=None):
+        return render_to_string(self.meta.form_template, {
+            'help_text': getattr(self.meta, 'help_text', None),
+            'classname': self.meta.form_classname,
+            'label': self.meta.label,
+        })
