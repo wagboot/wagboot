@@ -9,6 +9,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
+from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils.http import is_safe_url
 from django.views.generic.edit import FormMixin, FormMixinBase
@@ -73,14 +74,12 @@ class ProcessBlockMixin(object):
 
     def get_context(self, value):
         context = super(ProcessBlockMixin, self).get_context(value)
+        context = RequestContext(self.request, context)
         context.update({
-            'request': self.request,
             'user': self.request.user,
             'prefix': self.prefix
         })
         return context
-
-
 
     def process_request(self, request, value, prefix):
         """
