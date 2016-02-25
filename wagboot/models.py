@@ -25,7 +25,7 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock, ProcessBlockMixin
+from wagboot.blocks import LoginBlock, LogoutBlock, ProcessBlockMixin, PasswordResetBlock, PasswordChangeBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -205,6 +205,11 @@ BASE_BLOCKS = [
 GENERIC_PAGE_BLOCKS = [
     (choices.BLOCK_LOGIN, LoginBlock()),
     (choices.BLOCK_LOGOUT, LogoutBlock()),
+    (choices.BLOCK_PASSWORD_RESET, PasswordResetBlock()),
+]
+
+RESTRICTED_PAGE_BLOCKS = [
+    (choices.BLOCK_PASSWORD_CHANGE, PasswordChangeBlock()),
 ]
 
 

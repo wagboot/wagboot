@@ -5,7 +5,7 @@ import six
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME, login, logout
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
@@ -320,3 +320,28 @@ class NoFieldsBlock(ProcessBlockMixin, blocks.Block):
             'classname': self.meta.form_classname,
             'label': self.meta.label,
         })
+
+
+class PasswordResetBlock(FormWithLegendBlock):
+    form_class = PasswordResetForm
+
+    class Meta:
+        label = "Password reset"
+        help_text = "Sends user email with link to reset password, redirects to a given page to login"
+        template = "wagboot/blocks/password_reset.html"
+
+    def get_form_class(self):
+        if self.is_reset_link():
+            return SetPasswordForm
+        else:
+            return PasswordResetBlock
+
+
+class PasswordChangeBlock(FormWithLegendBlock):
+    form_class = PasswordChangeForm
+
+    class Meta:
+        label = "Password change"
+        help_text = "Lets user change password by entering old password first"
+        template = "wagboot/blocks/password_change.html"
+
