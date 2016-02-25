@@ -207,9 +207,25 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
         return context
 
 
-class LoginBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
-    default_next_page = blocks.PageChooserBlock()
-    legend = blocks.RichTextBlock(required=False, help_text="Text to the right of login form")
+class FormWithLegendBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
+    success_page = blocks.PageChooserBlock(help_text="Where to redirect after successful processing")
+    legend = blocks.RichTextBlock(required=False, help_text="Text to the right of the form")
+
+    form_class = None
+
+    class Meta:
+        # label = "Form"
+        # help_text = "Shows form with legend on the right and redirects to the success_page"
+        # icon = "fa-user-plus"
+        template = "wagboot/blocks/form_with_legend.html"
+
+
+    def get_success_url(self):
+        # It is required, so should be present
+        return self.block_value['success_page'].url
+
+
+class LoginBlock(FormWithLegendBlock):
 
     form_class = AuthenticationForm
 
@@ -218,12 +234,6 @@ class LoginBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.S
         help_text = "Logs user in, and redirects to requested or default page"
         icon = "user"
         template = "wagboot/blocks/login.html"
-
-    def _get_next_url(self):
-        next_url = '/'
-        if self.block_value['default_next_page']:
-            next_url = self.block_value['default_next_page'].url
-        return next_url
 
     def get_form_kwargs(self):
         kwargs = super(LoginBlock, self).get_form_kwargs()
@@ -240,7 +250,7 @@ class LoginBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.S
     def get_success_url(self):
         redirect_to = self.request.POST.get(REDIRECT_FIELD_NAME,
                                             self.request.GET.get(REDIRECT_FIELD_NAME,
-                                                                 self._get_next_url()))
+                                                                 super(LoginBlock, self).get_success_url()))
         if not is_safe_url(url=redirect_to, host=self.request.get_host()):
             redirect_to = resolve_url(settings.LOGIN_REDIRECT_URL)
 

@@ -1,22 +1,4 @@
-{% load wagtailcore_tags %}{% load wagboot_tags %}
-<div class="row">
-  <div class="col-sm-6">
-    <form class="signup-block" method="post">
-      {% for field in form %}
-        <div class="form-group">
-          <label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}:</label>
-          {{ field|add_class_to_field:"form-control" }}
-          {{ field.errors }}
-        </div>
-      {% endfor %}
-      <div class="form-group">
-        {{ form.non_field_errors }}
-        <button type="submit" class="btn btn-primary">Sign In</button>
-      </div>
-    </form>
-  </div>
-  <div class="col-sm-6">
-    {{ value.legend|richtext }}
-  </div>
-</div>
+{% extends "wagboot/blocks/form_with_legend.html" %}
+
+{% block submit_text %}Sign In{% endblock %}
 
