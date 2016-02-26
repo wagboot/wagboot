@@ -10,6 +10,7 @@ Extend this form in your templates:
 
 {% endcomment %}
 
+{% block form_whole %}
 <div class="row form-{{ value.block.name }}">
   <div class="col-sm-6">
     <form method="post">
@@ -27,10 +28,13 @@ Extend this form in your templates:
           {% endif %}
         {% endfor %}
       {% endblock %}
-      <div class="form-group">
-        {{ form.non_field_errors }}
-        <button type="submit" class="btn btn-primary">{% block submit_text %}{{ submit_text|default:"Submit" }}{% endblock %}</button>
-      </div>
+      {% block form_extra %}{% endblock %}
+      {% block form_submit %}
+        <div class="form-group">
+          {{ form.non_field_errors }}
+          <button type="submit" class="btn btn-primary">{% block submit_text %}{{ submit_text|default:"Submit" }}{% endblock %}</button>
+        </div>
+      {% endblock %}
     </form>
   </div>
   <div class="col-sm-6">
@@ -38,3 +42,4 @@ Extend this form in your templates:
   </div>
 </div>
 
+{% endblock %}
