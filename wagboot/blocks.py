@@ -163,6 +163,10 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
         form_class = ...
 
     """
+    success_message = None
+
+    def get_success_message(self):
+        return self.success_message
 
     def get_media(self, request, value, prefix):
         media = super(FormBlockMixin, self).get_media(request, value, prefix)
@@ -202,6 +206,9 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
         self.form = self.get_form()
         if self.request.method.lower() == 'post' and self._is_data_present():
             if self.form.is_valid():
+                success_message = self.get_success_message()
+                if success_message:
+                    messages.success(self.request, success_message)
                 return self.form_valid(self.form)
 
     def after_render_cleanup(self):
@@ -498,9 +505,22 @@ class PasswordResetBlock(FormWithLegendBlock):
 
 class PasswordChangeBlock(FormWithLegendBlock):
     form_class = PasswordChangeForm
+    success_message = "Password has been changed"
 
     class Meta:
         label = "Password change"
         help_text = "Lets user change password by entering old password first"
-        template = "wagboot/blocks/password_change.html"
+        # template = "wagboot/blocks/password_change.html"
 
+    def get_form_kwargs(self):
+        kwargs = super(PasswordChangeBlock, self).get_form_kwargs()
+
+        kwargs.update({
+            'user': self.request.user
+        })
+
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        return super(PasswordChangeBlock, self).form_valid(form)
