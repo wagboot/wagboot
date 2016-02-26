@@ -244,6 +244,7 @@ class FormWithLegendBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin,
 class LoginBlock(FormWithLegendBlock):
 
     form_class = AuthenticationForm
+    success_message = "You have signed in"
 
     class Meta:
         label = "Login Form"
@@ -296,6 +297,7 @@ class LogoutBlock(ProcessBlockMixin, blocks.StructBlock):
     def pre_render_action(self):
         if self.request.method.lower() == 'post' and self.request.POST.get('{}-logout'.format(self.prefix)):
             logout(self.request)
+            messages.success(self.request, "You have been logged out")
             return HttpResponseRedirect(self.get_success_url())
 
 
