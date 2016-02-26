@@ -1,20 +1,30 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import random
+import time
+from email.utils import formataddr
+
 import six
+from django import forms
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import REDIRECT_FIELD_NAME, login, logout
+from django.contrib.auth import REDIRECT_FIELD_NAME, login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils.http import is_safe_url
+from django.utils.encoding import force_text, force_bytes
+from django.utils.http import is_safe_url, urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.safestring import mark_safe
 from django.views.generic.edit import FormMixin, FormMixinBase
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
+from wagtail.wagtailcore.models import Site
 
 from wagboot import choices
 
@@ -322,19 +332,168 @@ class NoFieldsBlock(ProcessBlockMixin, blocks.Block):
         })
 
 
+_RESET_TOKEN = 'reset-token'
+_RESET_UID = 'reset-uid'
+
+
+class EmailBlock(blocks.FieldBlock):
+    def __init__(self, required=True, help_text=None, max_length=None, min_length=None, **kwargs):
+        self.field = forms.EmailField(
+            required=required,
+            help_text=help_text,
+            max_length=max_length,
+            min_length=min_length
+        )
+        super(EmailBlock, self).__init__(**kwargs)
+
+
 class PasswordResetBlock(FormWithLegendBlock):
-    form_class = PasswordResetForm
+
+    reset_email_subject = blocks.CharBlock(help_text="Subject of password reset email",
+                                           default="Password reset")
+
+    reset_email_text = blocks.RichTextBlock(help_text="Text of password reset email (link for reset will be displayed "
+                                                      "after it)")
+
+    reset_email_from = EmailBlock(help_text="Enter 'reply to' email for password reset emails")
+
+    token_generator = PasswordResetTokenGenerator()
+
+    _use_https = True
+
+    template_email_body_html = "wagboot/blocks/password_reset_email.html"
+    template_email_body_text = "wagboot/blocks/password_reset_email.txt"
+
 
     class Meta:
         label = "Password reset"
         help_text = "Sends user email with link to reset password, redirects to a given page to login"
         template = "wagboot/blocks/password_reset.html"
 
+    def _is_valid_reset_link(self):
+        """
+        Checks that we came to page with reset link in URL. Need to show password changing instead of email form.
+        :return: bool
+        """
+        return bool(self._get_valid_user())
+
+
+    def _get_uid64_and_token(self):
+        data = self.request.POST if (_RESET_UID in self.request.POST) else self.request.GET
+        return data.get(_RESET_UID), data.get(_RESET_TOKEN)
+
     def get_form_class(self):
-        if self.is_reset_link():
+        if self._is_valid_reset_link():
             return SetPasswordForm
         else:
-            return PasswordResetBlock
+            return PasswordResetForm
+
+    def get_form_kwargs(self):
+        kwargs = super(PasswordResetBlock, self).get_form_kwargs()
+        if self._is_valid_reset_link():
+            kwargs.update({
+                'user': self._get_valid_user()
+            })
+
+        return kwargs
+
+    def get_user_model(self):
+        return get_user_model()
+
+    _sent_reset_link = False
+
+    def get_context(self, value):
+        context = super(PasswordResetBlock, self).get_context(value)
+
+        uid64, token = self._get_uid64_and_token()
+
+        context.update({
+            'uid64': uid64,
+            'token': token,
+            'uid_name': _RESET_UID,
+            'token_name': _RESET_TOKEN,
+            'valid_link': self._is_valid_reset_link(),
+            'sent_reset_link': self._sent_reset_link
+        })
+
+        return context
+
+    def _get_valid_user(self):
+        uid64, token = self._get_uid64_and_token()
+        if uid64 and token:
+            UserModel = self.get_user_model()
+            try:
+                uid = force_text(urlsafe_base64_decode(uid64))
+                user = UserModel._default_manager.get(pk=uid)
+            except (TypeError, ValueError, OverflowError, UserModel.DoesNotExist):
+                user = None
+            if user is not None and self.token_generator.check_token(user, token):
+                return user
+
+    def pre_render_action(self):
+        uid64, token = self._get_uid64_and_token()
+        if uid64 and token and not self._is_valid_reset_link():
+            # We have some tokens, but they are not good. We show email form, but need to tell the user about error
+            messages.error(self.request, "This reset link has expired, you need to request password reset again")
+        return super(PasswordResetBlock, self).pre_render_action()
+
+    def get_user_by_email(self, email):
+        UserModel = self.get_user_model()
+        return UserModel.objects.filter(email=email.lower(), is_active=True).first()
+
+    def form_valid(self, form):
+        if self._is_valid_reset_link():
+            # Set the password for user with this token to the one in the form
+            form.save()
+            messages.success(self.request, "Password has been changed, please login with a new password")
+            return super(PasswordResetBlock, self).form_valid(form)
+        else:
+            user = self.get_user_by_email(form.cleaned_data['email'])
+            time.sleep(random.SystemRandom().randint(20, 80)/10.0)
+            if user:
+                self._sent_reset_link = True
+                self._send_reset_link(user)
+                messages.success(self.request, "Please check your email for instructions on resetting your password")
+            else:
+                messages.error(self.request, "No user with such email has been found")
+
+            # We do not redirect in this case, only show message in template
+
+    def _send_reset_link(self, user):
+        reset_link = "{protocol}://{domain}{url}?{token_name}={token}&{uid_name}={uid64}"
+        site = Site.find_for_request(self.request)
+
+        reset_link = reset_link.format(protocol="https" if self._use_https else "http",
+                                       domain=site.hostname,
+                                       url=self.request.path_info,
+                                       uid_name=_RESET_UID,
+                                       uid64=urlsafe_base64_encode(force_bytes(user.pk)),
+                                       token_name=_RESET_TOKEN,
+                                       token=self.token_generator.make_token(user))
+
+        from_email = formataddr((site.site_name or site.hostname, self.block_value['reset_email_from']))
+        to_email = formataddr(("{}".format(user), user.email))
+        subject = self.block_value['reset_email_subject'].replace('\n', '')
+
+        context = {
+            'reset_link': mark_safe(reset_link),
+            'email_text': self.block_value['reset_email_text'],
+            'site': site,
+            'user': user
+        }
+
+        html_body = render_to_string(self.template_email_body_html, context=context)
+        text_body = render_to_string(self.template_email_body_text, context=context)
+
+        send_mail(subject=subject,
+                  message=text_body,
+                  html_message=html_body,
+                  from_email=from_email,
+                  recipient_list=[to_email])
+
+    def after_render_cleanup(self):
+        super(PasswordResetBlock, self).after_render_cleanup()
+        self._sent_reset_link = False
 
 
 class PasswordChangeBlock(FormWithLegendBlock):
