@@ -1,6 +1,8 @@
 {% extends "wagboot/_base.html" %}
 {% load wagtailcore_tags %}
 
+{% block bodyclass %}clear-page{% endblock %}
+
 {% block content %}
   <div class="container">
     {{ page.body|richtext }}

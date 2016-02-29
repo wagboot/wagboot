@@ -105,6 +105,8 @@
   {% include "wagboot/menu/_top.html" with menu=top_menu %}
 {% endblock %}
 
+{% block bodyclass %}generic-page{% endblock %}
+
 {% block content %}
   {% for block in page.body %}
     {% include "wagboot/blocks/_render_base_block.html" with block=block %}
