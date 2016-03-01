@@ -290,11 +290,20 @@ class BaseGenericPage(Page):
 
 
 class AbstractGenericPage(BaseGenericPage):
+    show_in_sitemap = models.BooleanField(verbose_name="Show in sitemap.xml",
+                                          default=True,
+                                          help_text="Whether this page will be shown in sitemap.xml")
+
     # You need to create body field like so:
     # body = StreamField(BASE_BLOCKS + GENERIC_PAGE_BLOCKS + YOUR_CUSTOM_BLOCKS)
 
     class Meta:
         abstract = True
+
+    def get_sitemap_urls(self):
+        if self.show_in_sitemap:
+            return super(AbstractGenericPage, self).get_sitemap_urls()
+        return []
 
 # Example of page:
 #
@@ -325,6 +334,9 @@ class AbstractRestrictedPage(BaseGenericPage):
         if not request.user.is_authenticated():
             return redirect_to_login(self.url, login_url=self._get_login_url(request))
         return super(AbstractRestrictedPage, self).serve(request, *args, **kwargs)
+
+    def get_sitemap_urls(self):
+        return []
 
 
 class AbstractClearPage(Page):
