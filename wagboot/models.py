@@ -297,7 +297,7 @@ class AbstractGenericPage(BaseGenericPage):
     # You need to create body field like so:
     # body = StreamField(BASE_BLOCKS + GENERIC_PAGE_BLOCKS + YOUR_CUSTOM_BLOCKS)
 
-    settings_panels = BaseGenericPage.promote_panels + [
+    promote_panels = BaseGenericPage.promote_panels + [
         FieldPanel('show_in_sitemap'),
     ]
 
