@@ -6,6 +6,7 @@
   {% compress js %}
     <script type="text/javascript">
       $(function () {
+        // This is a show-hide script for features carousel
         var $overview = $('.feature-block-overview');
         var $all_panels = $('.feature-block-panel');
         var $all_small_blocks = $('.feature-block-small-more');
@@ -13,12 +14,12 @@
 
         $('.feature-block-more-activate').on('click', function featureReadMore(event) {
           var $event_target = $(event.target);
-          console.log($event_target);
+
           var panel = $event_target.attr('data-panel');
-          console.log("panel: " + panel);
+          var $container = $event_target.closest('.container');
+
           if (panel === undefined) {
             panel = $event_target.closest('.feature-block-more-activate').attr('data-panel');
-            console.log("panel: " + panel);
           }
 
           var $this_panel = $('.feature-block-panel-' + panel);
@@ -37,9 +38,14 @@
 
           // Show our detail panel slowly
           $this_panel.slideDown(duration);
+
+          // Scroll to the top of container
+          $('html, body').animate({
+            scrollTop: $container.offset().top
+          }, duration);
         });
         $('.feature-block-back-activate').on('click', function featureBack(event) {
-          $all_panels.slideUp(duration/2);
+          $all_panels.slideUp(duration / 2);
           $overview.slideDown(duration);
         });
       });
