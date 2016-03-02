@@ -15,8 +15,12 @@ Used to render top menu.
         <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      {% if menu.cta_name and menu.cta_url %}
-        <a href="{{ menu.cta_url }}" class="navbar-cta navbar-cta-small">{{ menu.cta_name }}</a>
+      {% if menu.cta_name or menu.cta_page %}
+        {% if menu.cta_page %}
+          <a href="{{ menu.cta_page.url }}" class="navbar-cta navbar-cta-small">{{ menu.cta_name|default:menu.cta_page.title }}</a>
+        {% elif menu.cta_url %}
+          <a href="{{ menu.cta_url }}" class="navbar-cta navbar-cta-small">{{ menu.cta_name }}</a>
+        {% endif %}
       {% endif %}
       <a class="navbar-brand" href="/">{% if settings.wagboot.WebsiteSettings.menu_logo %}
         {% image settings.wagboot.WebsiteSettings.menu_logo original class="logo" %}{% endif %}</a>
