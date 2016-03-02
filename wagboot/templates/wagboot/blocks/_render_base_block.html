@@ -74,11 +74,19 @@
       <div class="col-md-2 col-xs-3">{% image block.value.image width-100 style="display:block;margin-left:auto;margin-right:0" %}</div>
       <div class="col-md-10 col-xs-9">{{ block.value.text|richtext }}</div>
   {% elif block.block_type == choices.BLOCK_IMAGE_TEXT %}
-      <div class="col-md-6">{% image block.value.image width-400 style="display:block;margin-left:auto;margin-right:auto" %}</div>
-      <div class="col-md-6">{{ block.value.text|richtext }}</div>
+      <div class="col-xs-12 col-sm-6">
+        {% image block.value.image width-450 style="display:block;margin-left:auto;margin-right:auto" class="hidden-sm hidden-xs" %}
+        {% image block.value.image width-400 style="display:block;margin-left:auto;margin-right:auto" class="visible-sm-block" %}
+        {% image block.value.image width-344 style="display:block;margin-left:auto;margin-right:auto" class="visible-xs-block" %}
+      </div>
+      <div class="col-xs-12 col-sm-6">{{ block.value.text|richtext }}</div>
   {% elif block.block_type == choices.BLOCK_TEXT_IMAGE %}
-      <div class="col-md-6">{{ block.value.text|richtext }}</div>
-      <div class="col-md-6">{% image block.value.image width-400 style="display:block;margin-left:auto;margin-right:auto" %}</div>
+      <div class="col-xs-12 col-sm-6">{{ block.value.text|richtext }}</div>
+      <div class="col-xs-12 col-sm-6">
+        {% image block.value.image width-450 style="display:block;margin-left:auto;margin-right:auto" class="hidden-sm hidden-xs" %}
+        {% image block.value.image width-400 style="display:block;margin-left:auto;margin-right:auto" class="visible-sm-block" %}
+        {% image block.value.image width-344 style="display:block;margin-left:auto;margin-right:auto" class="visible-xs-block" %}
+      </div>
   {% elif block.block_type == choices.BLOCK_TEXT %}
     <div class="col-md-12 generic-page-{{ block.value.text_align }}">{{ block.value.text|richtext }}</div>
   {% endif %}
