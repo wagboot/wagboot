@@ -32,7 +32,8 @@
       <div class="row feature-block-overview">
         {% for feature in block.value %}
           <div class="col-md-4 col-xs-6 feature-block feature-block-more-activate" data-panel="{{ forloop.counter0 }}">
-            {% image feature.image width-100 class="feature-block-image" %}
+            {% image feature.image width-100 class="feature-block-image hidden-xs hidden-sm" %}
+            {% image feature.image width-60 class="feature-block-image hidden-md hidden-lg" %}
             <h2 class="feature-block-header">{{ feature.header }}</h2>
             <p class="feature-block-short-text">{{ feature.short_text }}</p>
             <span class="feature-block-more">Read more</span>
@@ -42,7 +43,8 @@
       {% for feature in block.value %}
         <div class="row feature-block-panel feature-block-panel-{{ forloop.counter0 }}" style="display: none">
           <div class="col-md-2 feature-block-back">
-            {% image feature.image width-100 class="feature-block-image" %}
+            {% image feature.image width-100 class="feature-block-image hidden-xs hidden-sm" %}
+            {% image feature.image width-60 class="feature-block-image hidden-md hidden-lg" %}
             <div class="feature-block-back-activate">&Larr; <span>Overview</span></div>
           </div>
           <div class="col-md-10">
@@ -52,7 +54,7 @@
             {% endfor %}
             <div class="row feature-block-others">
               {% for subfeature in block.value  %}
-                <div class="col-md-6 col-xs-6 feature-block-more-activate feature-block-small-more feature-block-small-more-{{ forloop.counter0 }}"
+                <div class="col-sm-6 col-xs-12 feature-block-more-activate feature-block-small-more feature-block-small-more-{{ forloop.counter0 }}"
                      data-panel="{{ forloop.counter0 }}">{% image subfeature.image width-40 class="feature-block-image-small" %}
                   {{ subfeature.header }}</div>
 
