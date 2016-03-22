@@ -6,6 +6,8 @@ import time
 from email.utils import formataddr
 
 import six
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Submit
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -18,7 +20,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.utils.encoding import force_text, force_bytes
+from django.utils.encoding import force_text, force_bytes, force_str
 from django.utils.http import is_safe_url, urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.safestring import mark_safe
 from django.views.generic.edit import FormMixin, FormMixinBase
@@ -162,8 +164,14 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
     class MyStructFormBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
         form_class = ...
 
+    Form needs to have .helper from crispy_forms
+    If it does not have one - it will be created by get_form_helper() method.
+
+    get_form_helper() creates default FormHelper and adds Submit input with text from get_submit_text() method.
+
     """
     success_message = None
+    submit_text = 'Submit'
 
     def get_success_message(self):
         return self.success_message
@@ -202,8 +210,27 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
                 del kwargs['files']
         return kwargs
 
+    def get_submit_text(self):
+        return self.submit_text
+
+    def get_form_helper(self):
+        """
+        Creates FormHelper for the given form.
+        It works only of there is not helper on the form already.
+
+        Creates default FormHelper() and adds Submit input with get_submit_text() on it.
+        :return FormHelper
+        """
+        helper = FormHelper()
+        submit_text = self.get_submit_text()
+        if submit_text:
+            helper.add_input(Submit('submit', submit_text))
+        return helper
+
     def pre_render_action(self):
         self.form = self.get_form()
+        if not hasattr(self.form, 'helper'):
+            self.form.helper = self.get_form_helper()
         if self.request.method.lower() == 'post' and self._is_data_present():
             if self.form.is_valid():
                 success_message = self.get_success_message()
@@ -235,7 +262,6 @@ class FormWithLegendBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin,
         # icon = "fa-user-plus"
         template = "wagboot/blocks/form_with_legend.html"
 
-
     def get_success_url(self):
         # It is required, so should be present
         return self.block_value['success_page'].url
@@ -245,6 +271,7 @@ class LoginBlock(FormWithLegendBlock):
 
     form_class = AuthenticationForm
     success_message = "You have signed in"
+    submit_text = "Login"
 
     class Meta:
         label = "Login Form"
@@ -373,7 +400,6 @@ class PasswordResetBlock(FormWithLegendBlock):
     template_email_body_html = "wagboot/blocks/password_reset_email.html"
     template_email_body_text = "wagboot/blocks/password_reset_email.txt"
 
-
     class Meta:
         label = "Password reset"
         help_text = "Sends user email with link to reset password, redirects to a given page to login"
@@ -385,7 +411,6 @@ class PasswordResetBlock(FormWithLegendBlock):
         :return: bool
         """
         return bool(self._get_valid_user())
-
 
     def _get_uid64_and_token(self):
         data = self.request.POST if (_RESET_UID in self.request.POST) else self.request.GET
@@ -476,7 +501,7 @@ class PasswordResetBlock(FormWithLegendBlock):
                                        domain=site.hostname,
                                        url=self.request.path_info,
                                        uid_name=_RESET_UID,
-                                       uid64=urlsafe_base64_encode(force_bytes(user.pk)),
+                                       uid64=force_str(urlsafe_base64_encode(force_bytes(user.pk))),
                                        token_name=_RESET_TOKEN,
                                        token=self.token_generator.make_token(user))
 
@@ -508,6 +533,8 @@ class PasswordResetBlock(FormWithLegendBlock):
 class PasswordChangeBlock(FormWithLegendBlock):
     form_class = PasswordChangeForm
     success_message = "Password has been changed"
+
+    submit_text = "Change Password"
 
     class Meta:
         label = "Password change"
