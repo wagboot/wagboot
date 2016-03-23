@@ -9,4 +9,9 @@ setup(name='wagboot',
       version=get_git_version(),
       packages=find_packages(),
       include_package_data=True,
-      install_requires=['wagtail>=1.3.1', 'django>=1.8.0', 'libsass==0.10.1', 'six', 'django-ace==1.0.2'])
+      install_requires=['wagtail>=1.3.1',
+                        'django>=1.8.0',
+                        'libsass==0.10.1',
+                        'six',
+                        'django-ace==1.0.2',
+                        'django-crispy-forms>=1.6,<1.7'])

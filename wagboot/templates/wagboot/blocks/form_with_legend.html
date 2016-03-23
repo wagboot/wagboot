@@ -1,41 +1,20 @@
-{% load wagtailcore_tags %}{% load wagboot_tags %}
+{% load wagtailcore_tags %}{% load wagboot_tags %}{% load crispy_forms_tags %}
 {% comment %}
 
 Extend this form in your templates:
 
 {% extends "wagboot/blocks/form_with_legend.html" %}
 
-{% block submit_text %}Signup{% endblock %}
-{% block form_fields %}<input..>{% endblock %}
+{% block form %}To replace the whole form{% endblock %}
 
 {% endcomment %}
 
 {% block form_whole %}
 <div class="row form-{{ value.block.name }}">
   <div class="col-sm-6">
-    <form method="post">
-      {% csrf_token %}
-      {% block form_fields %}
-        {% for field in form %}
-          {% if field.is_hidden %}
-            {{ field }}
-          {% else %}
-            <div class="form-group">
-              <label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}:</label>
-              {{ field|add_class_to_field:"form-control" }}
-              {{ field.errors }}
-            </div>
-          {% endif %}
-        {% endfor %}
-      {% endblock %}
-      {% block form_extra %}{% endblock %}
-      {% block form_submit %}
-        <div class="form-group">
-          {{ form.non_field_errors }}
-          <button type="submit" class="btn btn-primary">{% block submit_text %}{{ submit_text|default:"Submit" }}{% endblock %}</button>
-        </div>
-      {% endblock %}
-    </form>
+    {% block form %}
+    {% crispy form %}
+    {% endblock %}
   </div>
   <div class="col-sm-6">
     {{ value.legend|richtext }}
