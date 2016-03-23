@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import random
-import time
 from email.utils import formataddr
 
 import six
@@ -12,7 +10,7 @@ from django import forms
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME, login, logout, get_user_model
-from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, SetPasswordForm, PasswordChangeForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
@@ -29,7 +27,7 @@ from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
 from wagtail.wagtailcore.models import Site
 
 from wagboot import choices
-
+from wagboot.forms import SetPasswordForm, PasswordResetForm
 
 _RENDERED_CONTENT = 'wagboot_rendered_content'
 
@@ -368,10 +366,6 @@ class NoFieldsBlock(ProcessBlockMixin, blocks.Block):
         })
 
 
-_RESET_TOKEN = 'reset-token'
-_RESET_UID = 'reset-uid'
-
-
 class EmailBlock(blocks.FieldBlock):
     def __init__(self, required=True, help_text=None, max_length=None, min_length=None, **kwargs):
         self.field = forms.EmailField(
@@ -413,8 +407,8 @@ class PasswordResetBlock(FormWithLegendBlock):
         return bool(self._get_valid_user())
 
     def _get_uid64_and_token(self):
-        data = self.request.POST if (_RESET_UID in self.request.POST) else self.request.GET
-        return data.get(_RESET_UID), data.get(_RESET_TOKEN)
+        data = self.request.POST if ('reset_uid' in self.request.POST) else self.request.GET
+        return data.get('reset_uid'), data.get('reset_token')
 
     def get_form_class(self):
         if self._is_valid_reset_link():
@@ -439,18 +433,22 @@ class PasswordResetBlock(FormWithLegendBlock):
     def get_context(self, value):
         context = super(PasswordResetBlock, self).get_context(value)
 
-        uid64, token = self._get_uid64_and_token()
-
         context.update({
-            'uid64': uid64,
-            'token': token,
-            'uid_name': _RESET_UID,
-            'token_name': _RESET_TOKEN,
             'valid_link': self._is_valid_reset_link(),
             'sent_reset_link': self._sent_reset_link
         })
 
         return context
+
+    def get_initial(self):
+        initial = super(PasswordResetBlock, self).get_initial()
+        if self._is_valid_reset_link():
+            uid64, token = self._get_uid64_and_token()
+            initial.update({
+                'reset_token': token,
+                'reset_uid': uid64,
+            })
+        return initial
 
     def _get_valid_user(self):
         uid64, token = self._get_uid64_and_token()
@@ -471,9 +469,11 @@ class PasswordResetBlock(FormWithLegendBlock):
             messages.error(self.request, "This reset link has expired, you need to request password reset again")
         return super(PasswordResetBlock, self).pre_render_action()
 
-    def get_user_by_email(self, email):
-        UserModel = self.get_user_model()
-        return UserModel.objects.filter(email=email.lower(), is_active=True).first()
+    def get_submit_text(self):
+        if self._is_valid_reset_link():
+            return "Change Password"
+        else:
+            return "Reset Password"
 
     def form_valid(self, form):
         if self._is_valid_reset_link():
@@ -482,27 +482,20 @@ class PasswordResetBlock(FormWithLegendBlock):
             messages.success(self.request, "Password has been changed, please login with a new password")
             return super(PasswordResetBlock, self).form_valid(form)
         else:
-            user = self.get_user_by_email(form.cleaned_data['email'])
-            time.sleep(random.SystemRandom().randint(20, 80)/10.0)
-            if user:
-                self._sent_reset_link = True
-                self._send_reset_link(user)
-                messages.success(self.request, "Please check your email for instructions on resetting your password")
-            else:
-                messages.error(self.request, "No user with such email has been found")
-
+            user = form.get_user()
+            self._sent_reset_link = True
+            self._send_reset_link(user)
+            messages.success(self.request, "Please check your email for instructions on resetting your password")
             # We do not redirect in this case, only show message in template
 
     def _send_reset_link(self, user):
-        reset_link = "{protocol}://{domain}{url}?{token_name}={token}&{uid_name}={uid64}"
+        reset_link = "{protocol}://{domain}{url}?reset_token={token}&reset_uid={uid64}"
         site = Site.find_for_request(self.request)
 
         reset_link = reset_link.format(protocol="https" if self._use_https else "http",
                                        domain=site.hostname,
                                        url=self.request.path_info,
-                                       uid_name=_RESET_UID,
                                        uid64=force_str(urlsafe_base64_encode(force_bytes(user.pk))),
-                                       token_name=_RESET_TOKEN,
                                        token=self.token_generator.make_token(user))
 
         from_email = formataddr((site.site_name or site.hostname, self.block_value['reset_email_from']))
