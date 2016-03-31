@@ -212,7 +212,7 @@ class FormBlockMixin(ProcessBlockMixin, FormMixin):
     def get_form_helper(self):
         """
         Creates FormHelper for the given form.
-        It works only of there is not helper on the form already.
+        It works only if there is no helper on the form already.
 
         Creates default FormHelper() and adds Submit input with get_submit_text() on it.
         :return FormHelper
