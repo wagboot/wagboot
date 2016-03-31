@@ -5,7 +5,10 @@ Extend this form in your templates:
 
 {% extends "wagboot/blocks/form_with_legend.html" %}
 
-{% block form %}To replace the whole form{% endblock %}
+and use blocks:
+
+{% block form %}To replace only the form{% endblock %}
+{% block form_whole %}To replace the whole block, including the legend{% endblock %}
 
 {% endcomment %}
 
