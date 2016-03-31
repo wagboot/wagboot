@@ -101,28 +101,26 @@ class ProcessBlockMixin(object):
         :param prefix: prefix (for forms), unique for every block on page.
         :return: None or HttpResponse
         """
+        self.save_request_data(request, value, prefix)
+
+        template = getattr(self.meta, 'template', None)
+        if not template:
+            raise ValueError("This block must have a template")
+
         try:
-            self.save_request_data(request, value, prefix)
+            response = self.pre_render_action()
+            if response:
+                return response
+        except ValidationError as e:
+            for error in e.messages:
+                messages.error(request, "{}".format(error))
 
-            template = getattr(self.meta, 'template', None)
-            if not template:
-                raise ValueError("This block must have a template")
+        context = self.get_context(value)
 
-            try:
-                response = self.pre_render_action()
-                if response:
-                    return response
-            except ValidationError as e:
-                for error in e.messages:
-                    messages.error(request, "{}".format(error))
-
-            context = self.get_context(value)
-
-            if getattr(self.block_value, _RENDERED_CONTENT, None):
-                raise ValueError("Rendered content already exists, this is a bug")
-            setattr(value, _RENDERED_CONTENT, render_to_string(template, context))
-        finally:
-            self.after_render_cleanup()
+        if getattr(self.block_value, _RENDERED_CONTENT, None):
+            raise ValueError("Rendered content already exists, this is a bug")
+        setattr(value, _RENDERED_CONTENT, render_to_string(template, context))
+        self.after_render_cleanup()
 
 
 class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
