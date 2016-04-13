@@ -28,6 +28,7 @@ from wagtail.wagtailcore.models import Site
 
 from wagboot import choices
 from wagboot.forms import SetPasswordForm, PasswordResetForm
+from wagboot.models import WebsiteSettings
 
 _RENDERED_CONTENT = 'wagboot_rendered_content'
 
@@ -304,7 +305,6 @@ class LogoutBlock(ProcessBlockMixin, blocks.StructBlock):
 
     next_page = blocks.PageChooserBlock(required=False)
 
-
     class Meta:
         label = "Logout block"
         help_text = "Logs user out. Redirects to the given page or root of the website"
@@ -496,7 +496,7 @@ class PasswordResetBlock(FormWithLegendBlock):
                                        uid64=force_str(urlsafe_base64_encode(force_bytes(user.pk))),
                                        token=self.token_generator.make_token(user))
 
-        from_email = formataddr((site.site_name or site.hostname, self.block_value['reset_email_from']))
+        from_email = WebsiteSettings.get_from_email(site, True)
         to_email = formataddr(("{}".format(user), user.email))
         subject = self.block_value['reset_email_subject'].replace('\n', '')
 

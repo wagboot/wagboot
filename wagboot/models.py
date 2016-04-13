@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+from email.utils import formataddr
+
 import sass
 from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
@@ -168,6 +170,79 @@ except ImportError:
     # django_reversion is not available
     pass
 
+
+@register_setting
+class WebsiteSettings(BaseSetting):
+    default_css = models.ForeignKey(Css, null=True, blank=True,
+                                    help_text="Custom CSS to add to HEAD of all pages "
+                                              "(after extra_head and bootstrap css, before page css)")
+
+    bottom_extra_content = RichTextField(help_text="Will be added to the right side of bottom menu",
+                                         blank=True, null=True)
+    menu_logo = models.ForeignKey('wagtailimages.Image', null=True, on_delete=models.SET_NULL, related_name='+',
+                                  help_text="Will be shown in top left corner unchanged")
+    square_logo = models.ForeignKey('wagtailimages.Image', null=True, on_delete=models.SET_NULL,
+                                    help_text="Square logo (for website icon)", related_name='+')
+    extra_head = models.TextField(blank=True, null=True,
+                                  help_text="Raw HTML, will be included at the end of the HEAD")
+
+    extra_body = models.TextField(blank=True, null=True, help_text="Raw HTML, will be included at the end of the BODY")
+
+    robots_txt = models.TextField(default="Allow /\nDisallow /cms\nDisallow /admin\n",
+                                  help_text="robots.txt file. Default: Allow /\nDisallow /cms\nDisallow /admin\n "
+                                            "(each on separate line)")
+
+    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+',
+                                   on_delete=models.SET_NULL, help_text="Login page for restricted pages")
+
+    from_email = models.EmailField(blank=True, null=True, help_text="Default 'from' email for emails sent to "
+                                                                    "user (password resets, etc.)")
+    notifications_email = models.EmailField(blank=True, null=True, help_text="For system notifications")
+
+    panels = [
+        SnippetChooserPanel('default_css'),
+        FieldPanel('bottom_extra_content', classname="full"),
+        ImageChooserPanel('menu_logo'),
+        ImageChooserPanel('square_logo'),
+        FieldPanel('extra_head', classname="full"),
+        FieldPanel('extra_body', classname="full"),
+        FieldPanel('robots_txt', classname="full"),
+        PageChooserPanel('login_page'),
+        FieldPanel('email_from'),
+    ]
+
+    def full_clean(self, exclude=None, validate_unique=True):
+        # Login url should not be a restricted page itself
+        if self.login_page and issubclass(self.login_page.specific_class, AbstractRestrictedPage):
+            raise ValidationError({"login_page": "Login page should not be a restricted page"})
+
+    @classmethod
+    def _get_attr_for_site(cls, attr, site):
+        """
+        Lookups WebsiteSettings for given site and returns it's field.
+        :type attr: str
+        :type site: django.contrib.sites.models.Site
+        """
+        try:
+            return getattr(cls.for_site(site), attr)
+        except cls.DoesNotExist:
+            pass
+
+    @classmethod
+    def get_login_url(cls, site):
+        login_page = cls._get_attr_for_site('login_page', site)
+        if login_page:
+            return login_page.url
+        return settings.LOGIN_URL
+
+    @classmethod
+    def get_from_email(cls, site, formatted=False):
+        from_email = cls._get_attr_for_site('from_email', site)
+        if from_email and formatted:
+            return formataddr((site.site_name or site.hostname, from_email))
+        return from_email
+
+
 BASE_BLOCKS = [
     (choices.BLOCK_JUMBOTRON, blocks.StructBlock([
         ('text', blocks.RichTextBlock()),
@@ -322,21 +397,11 @@ class AbstractRestrictedPage(BaseGenericPage):
     class Meta(object):
         abstract = True
 
-    def _get_login_url(self, request):
-        login_url = settings.LOGIN_URL
-        try:
-            website_settings = WebsiteSettings.for_site(request.site)
-            if website_settings.login_page:
-                login_url = website_settings.login_page.url
-        except WebsiteSettings.DoesNotExist:
-            pass
-        return login_url
-
     # @method_decorator(csrf_protect)
     @method_decorator(never_cache)
     def serve(self, request, *args, **kwargs):
         if not request.user.is_authenticated():
-            return redirect_to_login(self.url, login_url=self._get_login_url(request))
+            return redirect_to_login(self.url, login_url=WebsiteSettings.get_login_url(request.site))
         return super(AbstractRestrictedPage, self).serve(request, *args, **kwargs)
 
     def get_sitemap_urls(self):
@@ -357,47 +422,6 @@ class AbstractClearPage(Page):
     class Meta(object):
         abstract = True
 
-
     def get_sitemap_urls(self):
         return []
 
-
-@register_setting
-class WebsiteSettings(BaseSetting):
-    default_css = models.ForeignKey(Css, null=True, blank=True,
-                                    help_text="Custom CSS to add to HEAD of all pages "
-                                              "(after extra_head and bootstrap css, before page css)")
-
-    bottom_extra_content = RichTextField(help_text="Will be added to the right side of bottom menu",
-                                         blank=True, null=True)
-    menu_logo = models.ForeignKey('wagtailimages.Image', null=True, on_delete=models.SET_NULL, related_name='+',
-                                  help_text="Will be shown in top left corner unchanged")
-    square_logo = models.ForeignKey('wagtailimages.Image', null=True, on_delete=models.SET_NULL,
-                                    help_text="Square logo (for website icon)", related_name='+')
-    extra_head = models.TextField(blank=True, null=True,
-                                  help_text="Raw HTML, will be included at the end of the HEAD")
-
-    extra_body = models.TextField(blank=True, null=True, help_text="Raw HTML, will be included at the end of the BODY")
-
-    robots_txt = models.TextField(default="Allow /\nDisallow /cms\nDisallow /admin\n",
-                                  help_text="robots.txt file. Default: Allow /\nDisallow /cms\nDisallow /admin\n "
-                                            "(each on separate line)")
-
-    login_page = models.ForeignKey('wagtailcore.Page', null=True, blank=True, related_name='+',
-                                   on_delete=models.SET_NULL, help_text="Login page for restricted pages")
-
-    panels = [
-        SnippetChooserPanel('default_css'),
-        FieldPanel('bottom_extra_content', classname="full"),
-        ImageChooserPanel('menu_logo'),
-        ImageChooserPanel('square_logo'),
-        FieldPanel('extra_head', classname="full"),
-        FieldPanel('extra_body', classname="full"),
-        FieldPanel('robots_txt', classname="full"),
-        PageChooserPanel('login_page'),
-    ]
-
-    def full_clean(self, exclude=None, validate_unique=True):
-        # Login url should not be a restricted page itself
-        if self.login_page and issubclass(self.login_page.specific_class, AbstractRestrictedPage):
-            raise ValidationError({"login_page": "Login page should not be a restricted page"})
