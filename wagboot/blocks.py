@@ -24,11 +24,9 @@ from django.utils.safestring import mark_safe
 from django.views.generic.edit import FormMixin, FormMixinBase
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
-from wagtail.wagtailcore.models import Site
 
 from wagboot import choices
 from wagboot.forms import SetPasswordForm, PasswordResetForm
-from wagboot.models import WebsiteSettings
 
 _RENDERED_CONTENT = 'wagboot_rendered_content'
 
@@ -394,7 +392,8 @@ class PasswordResetBlock(FormWithLegendBlock):
 
     class Meta:
         label = "Password reset"
-        help_text = "Sends user email with link to reset password, redirects to a given page to login"
+        help_text = "Sends user email with link to reset password, redirects to a given page to login. " \
+                    "Needs 'from_email' setup in website settings."
         template = "wagboot/blocks/password_reset.html"
 
     def _is_valid_reset_link(self):
@@ -461,6 +460,10 @@ class PasswordResetBlock(FormWithLegendBlock):
                 return user
 
     def pre_render_action(self):
+        from wagboot.models import WebsiteSettings
+        if not WebsiteSettings.get_from_email(self.request.site):
+            raise ValueError("Password reset block requires 'from_email' in website settings to be set")
+
         uid64, token = self._get_uid64_and_token()
         if uid64 and token and not self._is_valid_reset_link():
             # We have some tokens, but they are not good. We show email form, but need to tell the user about error
@@ -487,23 +490,25 @@ class PasswordResetBlock(FormWithLegendBlock):
             # We do not redirect in this case, only show message in template
 
     def _send_reset_link(self, user):
+        from wagboot.models import WebsiteSettings
         reset_link = "{protocol}://{domain}{url}?reset_token={token}&reset_uid={uid64}"
-        site = Site.find_for_request(self.request)
 
         reset_link = reset_link.format(protocol="https" if self._use_https else "http",
-                                       domain=site.hostname,
+                                       domain=self.request.site.hostname,
                                        url=self.request.path_info,
                                        uid64=force_str(urlsafe_base64_encode(force_bytes(user.pk))),
                                        token=self.token_generator.make_token(user))
 
-        from_email = WebsiteSettings.get_from_email(site, True)
+        from_email = WebsiteSettings.get_from_email(self.request.site, True)
+        if not from_email:
+            raise ValueError("Password reset block requires 'from_email' in website settings to be set")
         to_email = formataddr(("{}".format(user), user.email))
         subject = self.block_value['reset_email_subject'].replace('\n', '')
 
         context = {
             'reset_link': mark_safe(reset_link),
             'email_text': self.block_value['reset_email_text'],
-            'site': site,
+            'site': self.request.site,
             'user': user
         }
 
