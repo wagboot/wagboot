@@ -381,8 +381,6 @@ class PasswordResetBlock(FormWithLegendBlock):
     reset_email_text = blocks.RichTextBlock(help_text="Text of password reset email (link for reset will be displayed "
                                                       "after it)")
 
-    reset_email_from = EmailBlock(help_text="Enter 'reply to' email for password reset emails")
-
     token_generator = PasswordResetTokenGenerator()
 
     _use_https = True
