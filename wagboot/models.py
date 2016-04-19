@@ -171,8 +171,23 @@ except ImportError:
     pass
 
 
+class SettingsMixin(object):
+
+    @classmethod
+    def get_attr_for_site(cls, attr, site):
+        """
+        Lookups Settings for given site and returns requested field.
+        :type attr: basestring
+        :type site: django.contrib.sites.models.Site
+        """
+        try:
+            return getattr(cls.for_site(site), attr)
+        except cls.DoesNotExist:
+            pass
+
+
 @register_setting
-class WebsiteSettings(BaseSetting):
+class WebsiteSettings(SettingsMixin, BaseSetting):
     default_css = models.ForeignKey(Css, null=True, blank=True,
                                     help_text="Custom CSS to add to HEAD of all pages "
                                               "(after extra_head and bootstrap css, before page css)")
@@ -217,27 +232,15 @@ class WebsiteSettings(BaseSetting):
             raise ValidationError({"login_page": "Login page should not be a restricted page"})
 
     @classmethod
-    def _get_attr_for_site(cls, attr, site):
-        """
-        Lookups WebsiteSettings for given site and returns it's field.
-        :type attr: str
-        :type site: django.contrib.sites.models.Site
-        """
-        try:
-            return getattr(cls.for_site(site), attr)
-        except cls.DoesNotExist:
-            pass
-
-    @classmethod
     def get_login_url(cls, site):
-        login_page = cls._get_attr_for_site('login_page', site)
+        login_page = cls.get_attr_for_site('login_page', site)
         if login_page:
             return login_page.url
         return settings.LOGIN_URL
 
     @classmethod
     def get_from_email(cls, site, formatted=False):
-        from_email = cls._get_attr_for_site('from_email', site)
+        from_email = cls.get_attr_for_site('from_email', site)
         if from_email and formatted:
             return formataddr((site.site_name or site.hostname, from_email))
         return from_email
