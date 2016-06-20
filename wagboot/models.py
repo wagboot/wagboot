@@ -223,7 +223,7 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
         FieldPanel('extra_body', classname="full"),
         FieldPanel('robots_txt', classname="full"),
         PageChooserPanel('login_page'),
-        FieldPanel('email_from'),
+        FieldPanel('from_email'),
     ]
 
     def full_clean(self, exclude=None, validate_unique=True):
