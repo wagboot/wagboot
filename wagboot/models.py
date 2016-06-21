@@ -236,7 +236,7 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
         login_page = cls.get_attr_for_site('login_page', site)
         if login_page:
             return login_page.url
-        return settings.LOGIN_URL
+        return None
 
     @classmethod
     def get_from_email(cls, site, formatted=False):
