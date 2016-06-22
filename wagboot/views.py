@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 
 from wagboot.models import WebsiteSettings
 
@@ -20,5 +20,5 @@ def redirect_to_login(request):
     """
 
     login_url = WebsiteSettings.get_login_url(request.site)
-    return login_url or '/'
+    return HttpResponseRedirect(login_url or '/')
 
