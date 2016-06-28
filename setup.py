@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 from version import get_git_version
 
 setup(name='wagboot',
-      author='Dmitry Ulupov',
-      author_email='dima@ulupov.com',
-      url='https://github.com/wagboot/wagboot',
+      author='UDIO Systems',
+      author_email='development@udiosystems.com',
+      url='https://udiosystems.com',
       version=get_git_version(),
       packages=find_packages(),
       include_package_data=True,
