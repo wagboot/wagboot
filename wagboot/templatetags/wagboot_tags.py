@@ -31,7 +31,7 @@ def image(parser, token):
 class ImageNodeWithVariables(ImageNode):
     def render(self, context):
         try:
-            self.filter_spec = template.Variable(self.filter_spec).resolve(context)
+            self.filter_spec = template.Variable(self.filter_spec).resolve(context) or "original"
         except template.VariableDoesNotExist:
             pass
         return super(ImageNodeWithVariables, self).render(context)
