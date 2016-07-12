@@ -31,12 +31,27 @@ from wagboot.forms import SetPasswordForm, PasswordResetForm
 _RENDERED_CONTENT = 'wagboot_rendered_content'
 
 
-class ProcessBlockMixin(object):
+class WagbootBlockMixin(object):
+    """
+    Provides additional functions and methods to custom blocks.
+
+    - bases block context in rendering on page's context
+    - adds .request to block
+    - adds .block_value to block, to access actual data in methods during rendering
+    - adds POST processing:
+      - by using provided .prefix as a form prefix render a form on page (without action attribute)
+      - override pre_render_action to do something when form gets submitted with POST
+      - optionally override after_render_cleanup to delete something that was saved on a block during render
+        or action processing
+
+    Note: block must have a template for this mixin to work.
+
+    """
+    # This is an indication to wagboot to render this block directly
     self_render = True
-    standalone = False
 
     def get_context(self, value):
-        context = super(ProcessBlockMixin, self).get_context(value)
+        context = super(WagbootBlockMixin, self).get_context(value)
 
         context.update({
             'choices': choices
@@ -82,7 +97,7 @@ class ProcessBlockMixin(object):
         self.block_value = value
 
     def get_context(self, value):
-        context = super(ProcessBlockMixin, self).get_context(value)
+        context = super(WagbootBlockMixin, self).get_context(value)
         context = RequestContext(self.request, context)
         context.update({
             'user': self.request.user,
@@ -126,7 +141,7 @@ class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
     pass
 
 
-class FormBlockMixin(ProcessBlockMixin, FormMixin):
+class FormBlockMixin(WagbootBlockMixin, FormMixin):
     """
     Block that can process form data during rendering.
 
@@ -296,7 +311,7 @@ class LoginBlock(FormWithLegendBlock):
         return redirect_to
 
 
-class LogoutBlock(ProcessBlockMixin, blocks.StructBlock):
+class LogoutBlock(WagbootBlockMixin, blocks.StructBlock):
     confirm_logout = blocks.BooleanBlock(default=True,
                                          required=False,
                                          help_text="Show page before log out")
@@ -329,7 +344,7 @@ class Empty(object):
     pass
 
 
-class NoFieldsBlock(ProcessBlockMixin, blocks.Block):
+class NoFieldsBlock(WagbootBlockMixin, blocks.Block):
     """
     Used to show some data based on logged-in user (or request) but which does not have any additional setting.
     In wagtail page editing shows label and help_text.

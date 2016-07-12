@@ -9,7 +9,7 @@ Used to render bottom menu.
 {% load wagtailcore_tags %}
 
 <nav class="navbar navbar-default navbar-static-top bottom-menu">
-  <div class="container">
+  <div class="{{ settings.wagboot.WebsiteSettings.container_class|default:'container' }}">
     {% if menu.cta_name or menu.items.exists %}
       <ul class="nav navbar-nav">
         {% if menu.cta_name or menu.cta_page %}

@@ -1,3 +1,4 @@
+<div class="{{ settings.wagboot.WebsiteSettings.container_class|default:'container' }}">
 <div class="logout-block">
   <form method="post" id="logout-form">
     {% csrf_token %}
@@ -17,4 +18,5 @@
       </div>
     </div>
   </form>
+</div>
 </div>
