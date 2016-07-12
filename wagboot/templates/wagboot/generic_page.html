@@ -16,7 +16,7 @@
           var $event_target = $(event.target);
 
           var panel = $event_target.attr('data-panel');
-          var $container = $event_target.closest('.container');
+          var $container = $event_target.closest('.features-block-container');
 
           if (panel === undefined) {
             panel = $event_target.closest('.feature-block-more-activate').attr('data-panel');

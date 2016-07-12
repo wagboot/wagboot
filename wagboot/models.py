@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 from email.utils import formataddr
 
 import sass
-from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -27,7 +26,7 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock, ProcessBlockMixin, PasswordResetBlock, PasswordChangeBlock
+from wagboot.blocks import LoginBlock, LogoutBlock, WagbootBlockMixin, PasswordResetBlock, PasswordChangeBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -192,6 +191,10 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
                                     help_text="Custom CSS to add to HEAD of all pages "
                                               "(after extra_head and bootstrap css, before page css)")
 
+    container_class = models.CharField(max_length="42", choices=[('container', 'container - fixed width'),
+                                                                 ('container-fluid', 'container-fluid - full width')],
+                                       default='container')
+
     bottom_extra_content = RichTextField(help_text="Will be added to the right side of bottom menu",
                                          blank=True, null=True)
     menu_logo = models.ForeignKey('wagtailimages.Image', null=True, on_delete=models.SET_NULL, related_name='+',
@@ -224,6 +227,7 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
         FieldPanel('robots_txt', classname="full"),
         PageChooserPanel('login_page'),
         FieldPanel('from_email'),
+        FieldPanel('container_class'),
     ]
 
     def full_clean(self, exclude=None, validate_unique=True):
@@ -353,7 +357,7 @@ class BaseGenericPage(Page):
         try:
             self.extra_media = []
             for num, stream_block in enumerate(self.body):
-                if isinstance(stream_block.block, ProcessBlockMixin):
+                if isinstance(stream_block.block, WagbootBlockMixin):
                     prefix = "block-{}".format(num)
                     result = stream_block.block.process_request(request, stream_block.value, prefix)
                     if result:

@@ -13,6 +13,7 @@ and use blocks:
 {% endcomment %}
 
 {% block form_whole %}
+<div class="{{ settings.wagboot.WebsiteSettings.container_class|default:'container' }}">
 <div class="row form-{{ value.block.name }}">
   <div class="col-sm-6">
     {% block form %}
@@ -22,6 +23,7 @@ and use blocks:
   <div class="col-sm-6">
     {{ value.legend|richtext }}
   </div>
+</div>
 </div>
 
 {% endblock %}

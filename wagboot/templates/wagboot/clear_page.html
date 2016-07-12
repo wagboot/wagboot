@@ -4,7 +4,7 @@
 {% block bodyclass %}clear-page{% endblock %}
 
 {% block content %}
-  <div class="container">
+  <div class="{{ settings.wagboot.WebsiteSettings.container_class|default:"container" }}">
     {{ page.body|richtext }}
   </div>
 {% endblock %}
