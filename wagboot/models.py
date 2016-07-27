@@ -7,6 +7,7 @@ import sass
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.shortcuts import redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django_ace import AceWidget
@@ -432,3 +433,19 @@ class AbstractClearPage(Page):
     def get_sitemap_urls(self):
         return []
 
+
+class AbstractAliasPage(Page):
+    """
+    Page that redirects to another page.
+    """
+    alias_for_page = models.ForeignKey('wagtailcore.Page', related_name='aliases', on_delete=models.PROTECT)
+
+    content_panels = Page.content_panels + [
+        PageChooserPanel('alias_for_page')
+    ]
+
+    def serve(self, request, *args, **kwargs):
+        return redirect(self.alias_for_page.url, permanent=False)
+
+    class Meta(object):
+        abstract = True
