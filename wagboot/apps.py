@@ -2,13 +2,13 @@
 from __future__ import absolute_import, unicode_literals
 
 from django.apps import AppConfig
-from wagtail.wagtailimages.formats import register_image_format, Format, unregister_image_format
 
 
 class WagbootConfig(AppConfig):
     name = 'wagboot'
 
     def ready(self):
+        from wagtail.wagtailimages.formats import register_image_format, Format, unregister_image_format
         unregister_image_format('left')
         unregister_image_format('right')
         unregister_image_format('fullwidth')
