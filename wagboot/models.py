@@ -192,8 +192,8 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
                                     help_text="Custom CSS to add to HEAD of all pages "
                                               "(after extra_head and bootstrap css, before page css)")
 
-    container_class = models.CharField(max_length="42", choices=[('container', 'container - fixed width'),
-                                                                 ('container-fluid', 'container-fluid - full width')],
+    container_class = models.CharField(max_length=42, choices=[('container', 'container - fixed width'),
+                                                               ('container-fluid', 'container-fluid - full width')],
                                        default='container')
 
     bottom_extra_content = RichTextField(help_text="Will be added to the right side of bottom menu",
