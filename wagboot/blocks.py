@@ -235,7 +235,7 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         helper.include_media = False
         submit_text = self.get_submit_text()
         if submit_text:
-            helper.add_input(Submit('submit', submit_text))
+            helper.add_input(Submit('submit_button', submit_text))
         return helper
 
     def pre_render_action(self):
