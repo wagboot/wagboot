@@ -226,12 +226,13 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
     def get_form_helper(self):
         """
         Creates FormHelper for the given form.
-        It works only if there is no helper on the form already.
+        It is called only if there is no helper on the form already.
 
         Creates default FormHelper() and adds Submit input with get_submit_text() on it.
         :return FormHelper
         """
         helper = FormHelper()
+        helper.include_media = False
         submit_text = self.get_submit_text()
         if submit_text:
             helper.add_input(Submit('submit', submit_text))
@@ -239,7 +240,10 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
 
     def pre_render_action(self):
         self.form = self.get_form()
-        if not hasattr(self.form, 'helper'):
+        if hasattr(self.form, 'helper'):
+            # We are including media separately into page's head, don't need to include twice
+            self.form.helper.include_media = False
+        else:
             self.form.helper = self.get_form_helper()
         if self.request.method.lower() == 'post' and self._is_data_present():
             if self.form.is_valid():
