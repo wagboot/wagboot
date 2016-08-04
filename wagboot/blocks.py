@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import warnings
 from email.utils import formataddr
 
 import six
@@ -198,7 +199,12 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         return media
 
     def form_invalid(self, form):
-        raise ValueError("form_invalid is not used in FormBlock")
+        """
+        form_invalid can show error message, but should not return anything.
+        Page will be re-rendered by page model.
+        :return: (must not return anything)
+        """
+        super(FormBlockMixin, self).form_invalid(form)
 
     def _is_data_present(self):
         """
@@ -251,6 +257,11 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
                 if success_message:
                     messages.success(self.request, success_message)
                 return self.form_valid(self.form)
+            else:
+                form_invalid_result = self.form_invalid(self.form)
+                if form_invalid_result:
+                    warnings.warn("form_invalid in form blocks should not return anything. Page will be re-rendered "
+                                  "by a page model. Got: {}".format(force_str(form_invalid_result)))
 
     def after_render_cleanup(self):
         super(FormBlockMixin, self).after_render_cleanup()
