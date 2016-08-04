@@ -204,7 +204,8 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         Page will be re-rendered by page model.
         :return: (must not return anything)
         """
-        super(FormBlockMixin, self).form_invalid(form)
+        # Not calling super, because it calls render_to_response which does not exist here
+        return
 
     def _is_data_present(self):
         """
