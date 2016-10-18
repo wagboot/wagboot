@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import warnings
 from email.utils import formataddr
 
 import six
+import warnings
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
@@ -51,14 +51,6 @@ class WagbootBlockMixin(object):
     # This is an indication to wagboot to render this block directly
     self_render = True
 
-    def get_context(self, value):
-        context = super(WagbootBlockMixin, self).get_context(value)
-
-        context.update({
-            'choices': choices
-        })
-        return context
-
     def get_media(self, request, value, prefix):
         """
         Can provide additional media to extrahead block.
@@ -102,7 +94,8 @@ class WagbootBlockMixin(object):
         context = RequestContext(self.request, context)
         context.update({
             'user': self.request.user,
-            'prefix': self.prefix
+            'prefix': self.prefix,
+            'choices': choices
         })
         return context
 
