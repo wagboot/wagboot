@@ -541,3 +541,16 @@ class PasswordChangeBlock(FormWithLegendBlock):
     def form_valid(self, form):
         form.save()
         return super(PasswordChangeBlock, self).form_valid(form)
+
+
+class JumbotronBlock(blocks.StructBlock):
+    class Meta:
+        label = "Jumbotron"
+        help_text = "Shows full-width block with a given text and background picture"
+        icon = "text"
+        template = "wagboot/blocks/jumbotron.html"
+
+    text = blocks.RichTextBlock()
+    background_image = ImageChooserBlock(required=False)
+    text_align', blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)),
+    ])),
