@@ -1,0 +1,10 @@
+{% load wagtailimages_tags %}{% load wagtailcore_tags %}
+<!-- small image text -->
+<div class="{{ settings.wagboot.WebsiteSettings.container_class|default:" container" }}">
+<div class="row generic-page-block generic-page-block-{{ block.block_type }}">
+  <div class="col-sm-2 col-xs-5">{% image block.value.image width-100 style="display:block;margin-left:auto;margin-right:0" %}</div>
+  <div class="col-sm-10 col-xs-7">{{ block.value.text|richtext }}</div>
+</div>
+</div>
+
+

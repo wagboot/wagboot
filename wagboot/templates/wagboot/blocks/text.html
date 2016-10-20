@@ -1,0 +1,9 @@
+{% load wagtailimages_tags %}{% load wagtailcore_tags %}
+<!-- text block -->
+<div class="{{ settings.wagboot.WebsiteSettings.container_class|default:" container" }}">
+<div class="row generic-page-block generic-page-block-{{ block.block_type }}">
+  <div class="col-md-12 generic-page-{{ block.value.text_align }}">{{ block.value.text|richtext }}</div>
+</div>
+</div>
+
+

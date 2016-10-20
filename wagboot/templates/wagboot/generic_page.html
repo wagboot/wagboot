@@ -1,4 +1,5 @@
 {% extends "wagboot/_base.html" %}
+{% load wagtailcore_tags %}
 
 {% load compress %}
 
@@ -116,7 +117,7 @@
 
 {% block content %}
   {% for block in page.body %}
-    {% include "wagboot/blocks/_render_base_block.html" with block=block %}
+    {% include_block block %}
   {% endfor %}
 {% endblock %}
 

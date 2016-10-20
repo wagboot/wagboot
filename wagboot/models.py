@@ -17,18 +17,15 @@ from six import python_2_unicode_compatible
 from wagtail.contrib.settings.models import BaseSetting
 from wagtail.contrib.settings.registry import register_setting
 from wagtail.wagtailadmin.edit_handlers import FieldPanel, StreamFieldPanel, InlinePanel, PageChooserPanel
-from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.fields import RichTextField
 from wagtail.wagtailcore.models import Page, Orderable
 from wagtail.wagtaildocs.edit_handlers import DocumentChooserPanel
-from wagtail.wagtailimages.blocks import ImageChooserBlock
 from wagtail.wagtailimages.edit_handlers import ImageChooserPanel
 from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
+from wagboot import blocks
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock, PasswordResetBlock, PasswordChangeBlock, JumbotronBlock, \
-    FeaturesCarouselBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -253,38 +250,23 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
 
 
 BASE_BLOCKS = [
-    (choices.BLOCK_JUMBOTRON, JumbotronBlock()),
-    (choices.BLOCK_TEXT_SMALL_IMAGE, blocks.StructBlock([
-        ('text', blocks.RichTextBlock()),
-        ('image', ImageChooserBlock()),
-    ], label="Text, small image")),
-    (choices.BLOCK_SMALL_IMAGE_TEXT, blocks.StructBlock([
-        ('image', ImageChooserBlock()),
-        ('text', blocks.RichTextBlock()),
-    ], label="Small image, text")),
-    (choices.BLOCK_IMAGE_TEXT, blocks.StructBlock([
-        ('image', ImageChooserBlock()),
-        ('text', blocks.RichTextBlock()),
-    ], label="Image, text")),
-    (choices.BLOCK_TEXT_IMAGE, blocks.StructBlock([
-        ('text', blocks.RichTextBlock()),
-        ('image', ImageChooserBlock()),
-    ], label="Text, image")),
-    (choices.BLOCK_TEXT, blocks.StructBlock([
-        ('text', blocks.RichTextBlock()),
-        ('text_align', blocks.ChoiceBlock(choices=choices.ALIGN_CHOICES, required=False)),
-    ], label="Text")),
-    (choices.BLOCK_FEATURES_CAROUSEL, FeaturesCarouselBlock()),
+    (choices.BLOCK_JUMBOTRON, blocks.JumbotronBlock()),
+    (choices.BLOCK_TEXT_SMALL_IMAGE, blocks.TextSmallImageBlock()),
+    (choices.BLOCK_SMALL_IMAGE_TEXT, blocks.SmallImageTextBlock()),
+    (choices.BLOCK_IMAGE_TEXT, blocks.ImageTextBlock()),
+    (choices.BLOCK_TEXT_IMAGE, blocks.TextImageBlock()),
+    (choices.BLOCK_TEXT, blocks.TextBlock()),
+    (choices.BLOCK_FEATURES_CAROUSEL, blocks.FeaturesCarouselBlock()),
 ]
 
 GENERIC_PAGE_BLOCKS = [
-    (choices.BLOCK_LOGIN, LoginBlock()),
-    (choices.BLOCK_LOGOUT, LogoutBlock()),
-    (choices.BLOCK_PASSWORD_RESET, PasswordResetBlock()),
+    (choices.BLOCK_LOGIN, blocks.LoginBlock()),
+    (choices.BLOCK_LOGOUT, blocks.LogoutBlock()),
+    (choices.BLOCK_PASSWORD_RESET, blocks.PasswordResetBlock()),
 ]
 
 RESTRICTED_PAGE_BLOCKS = [
-    (choices.BLOCK_PASSWORD_CHANGE, PasswordChangeBlock()),
+    (choices.BLOCK_PASSWORD_CHANGE, blocks.PasswordChangeBlock()),
 ]
 
 
