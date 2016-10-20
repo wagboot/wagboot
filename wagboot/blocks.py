@@ -572,3 +572,58 @@ class FeaturesCarouselBlock(blocks.ListBlock):
             ('short_text', blocks.TextBlock()),
             ('long_text', blocks.TextBlock()),
         ]))
+
+
+class TextSmallImageBlock(blocks.StructBlock):
+    text = blocks.RichTextBlock()
+    image = ImageChooserBlock()
+
+    class Meta:
+        label = "Text and Small image"
+        help_text = "Shows Text and small image to the right"
+        icon = "doc-full"
+        template = "wagboot/blocks/text_small_image.html"
+
+
+class SmallImageTextBlock(blocks.StructBlock):
+    image = ImageChooserBlock()
+    text = blocks.RichTextBlock()
+
+    class Meta:
+        label = "Small image and Text"
+        help_text = "Shows small image and text to the right"
+        icon = "image"
+        template = "wagboot/blocks/small_image_text.html"
+
+
+class TextImageBlock(blocks.StructBlock):
+    text = blocks.RichTextBlock()
+    image = ImageChooserBlock()
+
+    class Meta:
+        label = "Text and Image"
+        help_text = "Shows Text and image to the right"
+        icon = "doc-full"
+        template = "wagboot/blocks/text_image.html"
+
+
+class ImageTextBlock(blocks.StructBlock):
+    image = ImageChooserBlock()
+    text = blocks.RichTextBlock()
+
+    class Meta:
+        label = "Image and Text"
+        help_text = "Shows image and text to the right"
+        icon = "image"
+        template = "wagboot/blocks/image_text.html"
+
+
+class TextBlock(blocks.StructBlock):
+    text = blocks.RichTextBlock()
+    text_align = blocks.ChoiceBlock(choices=choices.ALIGN_CHOICES, required=False)
+
+    class Meta:
+        label = "Text"
+        help_text = "Shows text block"
+        icon = "doc-full"
+        template = "wagboot/blocks/text.html"
