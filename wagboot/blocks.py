@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import warnings
 from email.utils import formataddr
 
 import six
+import warnings
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
@@ -85,12 +85,14 @@ class WagbootBlockMixin(object):
         })
         return context
 
-    render_counter = 0
-
     def _gen_prefix(self, value):
-        self.render_counter += 1
-        # creation_counter is defined in the Block
-        return 'block-{}-{}'.format(self.creation_counter, self.render_counter)
+        """
+        Prefix generator is storing block number on request.
+        Idea is - if we are generating same page all the blocks will be in the same order.
+        """
+        self.request._wagboot_block_counter = getattr(self.request, '_wagboot_block_counter', 0) + 1
+
+        return 'block-{counter}'.format(counter=self.request._wagboot_block_counter)
 
     def render(self, value, context=None):
         """
