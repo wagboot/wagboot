@@ -546,15 +546,15 @@ class PasswordChangeBlock(FormWithLegendBlock):
 
 
 class JumbotronBlock(blocks.StructBlock):
+    text = blocks.RichTextBlock()
+    background_image = ImageChooserBlock(required=False)
+    text_align = blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)
+
     class Meta:
         label = "Jumbotron"
         help_text = "Shows full-width block with a given text and background picture"
         icon = "image"
         template = "wagboot/blocks/jumbotron.html"
-
-    text = blocks.RichTextBlock()
-    background_image = ImageChooserBlock(required=False)
-    text_align = blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)
 
 
 class FeaturesCarouselBlock(blocks.ListBlock):
