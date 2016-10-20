@@ -54,8 +54,9 @@
 {% endblock %}
 
 {% block extrahead %}
-  {% for media in extra_media %}
-{{ media }}
+  {% for block in page.body %}
+    <!-- rendering media for block {{ block.block_type }} -->
+    {{ block.block.render_media }}
   {% endfor %}
   {% compress css %}
     <style type="text/css">

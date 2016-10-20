@@ -27,7 +27,7 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock, WagbootBlockMixin, PasswordResetBlock, PasswordChangeBlock
+from wagboot.blocks import LoginBlock, LogoutBlock, PasswordResetBlock, PasswordChangeBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -321,7 +321,7 @@ class BaseGenericPage(Page):
             'choices': choices,
             'top_menu': self.get_top_menu(),
             'bottom_menu': self.get_bottom_menu,
-            'extra_media': self.extra_media
+            # 'extra_media': self.extra_media
         })
 
         return context
@@ -354,22 +354,22 @@ class BaseGenericPage(Page):
                 return bottom_menu
             page = page.get_parent()
 
-    def serve(self, request, *args, **kwargs):
-        try:
-            self.extra_media = []
-            for num, stream_block in enumerate(self.body):
-                if isinstance(stream_block.block, WagbootBlockMixin):
-                    prefix = "block-{}".format(num)
-                    result = stream_block.block.process_request(request, stream_block.value, prefix)
-                    if result:
-                        return result
-                    media = stream_block.block.get_media(request, stream_block.value, prefix)
-                    if media:
-                        self.extra_media.append(media)
-            return super(BaseGenericPage, self).serve(request, *args, **kwargs)
-        finally:
-            # If this object is ever shared do not leave old data around
-            del self.extra_media
+    # def serve(self, request, *args, **kwargs):
+    #     try:
+    #         self.extra_media = []
+    #         for num, stream_block in enumerate(self.body):
+    #             if isinstance(stream_block.block, WagbootBlockMixin):
+    #                 prefix = "block-{}".format(num)
+    #                 result = stream_block.block.process_request(request, stream_block.value, prefix)
+    #                 if result:
+    #                     return result
+    #                 media = stream_block.block.get_media(request, stream_block.value, prefix)
+    #                 if media:
+    #                     self.extra_media.append(media)
+    #         return super(BaseGenericPage, self).serve(request, *args, **kwargs)
+    #     finally:
+    #         # If this object is ever shared do not leave old data around
+    #         del self.extra_media
 
 
 class AbstractGenericPage(BaseGenericPage):
