@@ -323,7 +323,7 @@ class Empty(object):
     pass
 
 
-class NoFieldsBlock(WagbootBlockMixin, blocks.Block):
+class NoFieldsBlock(blocks.Block):
     """
     Used to show some data based on logged-in user (or request) but which does not have any additional setting.
     In wagtail page editing shows label and help_text.
