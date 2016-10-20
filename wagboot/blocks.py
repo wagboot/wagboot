@@ -22,7 +22,9 @@ from django.utils.safestring import mark_safe
 from django.views.generic.edit import FormMixin, FormMixinBase
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
+from wagtail.wagtailimages.blocks import ImageChooserBlock
 
+from wagboot import choices
 from wagboot.exceptions import RedirectException
 from wagboot.forms import SetPasswordForm, PasswordResetForm
 
@@ -547,10 +549,9 @@ class JumbotronBlock(blocks.StructBlock):
     class Meta:
         label = "Jumbotron"
         help_text = "Shows full-width block with a given text and background picture"
-        icon = "text"
+        icon = "image"
         template = "wagboot/blocks/jumbotron.html"
 
     text = blocks.RichTextBlock()
     background_image = ImageChooserBlock(required=False)
-    text_align', blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)),
-    ])),
+    text_align = blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)

@@ -27,7 +27,7 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock, PasswordResetBlock, PasswordChangeBlock
+from wagboot.blocks import LoginBlock, LogoutBlock, PasswordResetBlock, PasswordChangeBlock, JumbotronBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -252,11 +252,7 @@ class WebsiteSettings(SettingsMixin, BaseSetting):
 
 
 BASE_BLOCKS = [
-    (choices.BLOCK_JUMBOTRON, blocks.StructBlock([
-        ('text', blocks.RichTextBlock()),
-        ('background_image', ImageChooserBlock(required=False)),
-        ('text_align', blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)),
-    ])),
+    (choices.BLOCK_JUMBOTRON, JumbotronBlock()),
     (choices.BLOCK_TEXT_SMALL_IMAGE, blocks.StructBlock([
         ('text', blocks.RichTextBlock()),
         ('image', ImageChooserBlock()),

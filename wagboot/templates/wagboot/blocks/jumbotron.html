@@ -1,0 +1,22 @@
+{% load wagtailimages_tags %}{% load wagtailcore_tags %}
+<!-- jumbotron block -->
+{% image block.value.background_image original as background_image %}
+
+<div class="jumbotron jumbotron-{{ block.value.text_align }} generic-page-block-{{ block.block_type }}"
+    {% if block.value.background_image %}
+      style="background-image: url({{ background_image.url }}); background-repeat: no-repeat; background-position: center top; background-size: cover;"
+    {% endif %}>
+  <div class="{{ settings.wagboot.WebsiteSettings.container_class|default:"container" }}">
+    <div class="row">
+      {% if block.value.text_align == choices.LEFT %}
+        <div class="col-md-4 col-xs-8 col-sm-6">{{ block.value.text|richtext }}</div>
+      {% elif block.value.text_align == choices.LEFT_FULL %}
+        <div class="col-md-12">{{ block.value.text|richtext }}</div>
+      {% elif block.value.text_align == choices.RIGHT %}
+        <div class="col-md-4 col-xs-8 col-sm-6 col-md-offset-8 col-xs-offset-4 col-sm-offset-6 generic-page-right">{{ block.value.text|richtext }}</div>
+      {% elif block.value.text_align == choices.CENTER %}
+        <div class="col-md-12 generic-page-center">{{ block.value.text|richtext }}</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
