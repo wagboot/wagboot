@@ -555,3 +555,20 @@ class JumbotronBlock(blocks.StructBlock):
     text = blocks.RichTextBlock()
     background_image = ImageChooserBlock(required=False)
     text_align = blocks.ChoiceBlock(choices=choices.JUMBOTRON_ALIGN_CHOICES, required=False)
+
+
+class FeaturesCarouselBlock(blocks.ListBlock):
+
+    class Meta:
+        label = "Features Carousel"
+        help_text = "Shows carousel with 'features' of the product (do not use it)"
+        icon = "bin"
+        template = "wagboot/blocks/features_carousel.html"
+
+    def __init__(self, *args, **kwargs):
+        super(FeaturesCarouselBlock, self).__init__(blocks.StructBlock([
+            ('image', ImageChooserBlock()),
+            ('header', blocks.CharBlock(max_length=42)),
+            ('short_text', blocks.TextBlock()),
+            ('long_text', blocks.TextBlock()),
+        ]))

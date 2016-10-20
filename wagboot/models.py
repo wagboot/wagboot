@@ -27,7 +27,8 @@ from wagtail.wagtailsnippets.edit_handlers import SnippetChooserPanel
 from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import choices
-from wagboot.blocks import LoginBlock, LogoutBlock, PasswordResetBlock, PasswordChangeBlock, JumbotronBlock
+from wagboot.blocks import LoginBlock, LogoutBlock, PasswordResetBlock, PasswordChangeBlock, JumbotronBlock, \
+    FeaturesCarouselBlock
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -273,12 +274,7 @@ BASE_BLOCKS = [
         ('text', blocks.RichTextBlock()),
         ('text_align', blocks.ChoiceBlock(choices=choices.ALIGN_CHOICES, required=False)),
     ], label="Text")),
-    (choices.BLOCK_FEATURES_CAROUSEL, blocks.ListBlock(blocks.StructBlock([
-        ('image', ImageChooserBlock()),
-        ('header', blocks.CharBlock(max_length=42)),
-        ('short_text', blocks.TextBlock()),
-        ('long_text', blocks.TextBlock()),
-    ]), label="Features Carousel")),
+    (choices.BLOCK_FEATURES_CAROUSEL, FeaturesCarouselBlock()),
 ]
 
 GENERIC_PAGE_BLOCKS = [
