@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import warnings
 from email.utils import formataddr
 
 import six
-import warnings
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
@@ -13,11 +13,8 @@ from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME, login, logout, get_user_model
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
-from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.utils.encoding import force_text, force_bytes, force_str
 from django.utils.http import is_safe_url, urlsafe_base64_decode, urlsafe_base64_encode
@@ -26,10 +23,8 @@ from django.views.generic.edit import FormMixin, FormMixinBase
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
 
-from wagboot import choices
+from wagboot.exceptions import RedirectException
 from wagboot.forms import SetPasswordForm, PasswordResetForm
-
-_RENDERED_CONTENT = 'wagboot_rendered_content'
 
 
 class WagbootBlockMixin(object):
@@ -48,32 +43,18 @@ class WagbootBlockMixin(object):
     Note: block must have a template for this mixin to work.
 
     """
-    # This is an indication to wagboot to render this block directly
-    self_render = True
-
-    def get_media(self, request, value, prefix):
-        """
-        Can provide additional media to extrahead block.
-        """
-        self.save_request_data(request, value, prefix)
-
-    def render(self, value):
-        content = getattr(value, _RENDERED_CONTENT)
-        if not content:
-            raise ValueError("Rendered content was not found, this is a bug")
-        return content
 
     def pre_render_action(self):
         """
         Will be called before rendering template.
-        Can do some actions and return HttpResponse that will returned instead of the whole page.
-        If just renders the page must return None.
+        Can do some actions and raise RedirectException if it blocks needs redirect to another page.
         Should be overridden, by default does nothing.
 
-        All properties added to self must be cleaned in after_render_cleanup (blocks instances are shared).
-        :return:
+        Can return dict which will be included in the context.
+
+        :return: dict, additional context to be included during rendering.
         """
-        return None
+        return {}
 
     def after_render_cleanup(self):
         """
@@ -84,51 +65,57 @@ class WagbootBlockMixin(object):
         del self.prefix
         del self.block_value
 
-    def save_request_data(self, request, value, prefix):
-        self.request = request
-        self.prefix = prefix
+    def extract_request_data_from_context(self, value, context):
+        """
+        Used to save some data on the block instance for request processing.
+        All this data must be cleared in after_render_cleanup.
+        """
+
+        if context is None or 'request' not in context:
+            raise ValueError("This block must have access to request through context: {}".format(context))
+
+        self.request = context['request']
+        self.prefix = self._gen_prefix(value)
         self.block_value = value
 
     def get_context(self, value):
         context = super(WagbootBlockMixin, self).get_context(value)
-        context = RequestContext(self.request, context)
         context.update({
-            'user': self.request.user,
-            'prefix': self.prefix,
-            'choices': choices
+            'prefix': self.prefix
         })
         return context
 
-    def process_request(self, request, value, prefix):
-        """
-        Will be called by BaseGenericPage before rendering all blocks.
-        If it returns HttpResponse (from pre_render_action) this response will be served instead of the page.
+    render_counter = 0
 
-        :param request: HttpRequest
+    def _gen_prefix(self, value):
+        self.render_counter += 1
+        # creation_counter is defined in the Block
+        return 'block-{}-{}'.format(self.creation_counter, self.render_counter)
+
+    def render(self, value, context=None):
+        """
+        Return a text rendering of 'value', suitable for display on templates.
+
+        Will call those methods (in this order):
+        self.extract_request_data_from_context - to save request and actual block value for rendering
+        self.pre_render_action - to process request (form or anything), this method may raise RedirectException
+        self.after_render_cleanup - to delete saved request and other values on the object. Because this object will
+                                    be reused for same blocks on the page.
+
         :param value: Block value
-        :param prefix: prefix (for forms), unique for every block on page.
-        :return: None or HttpResponse
+        :param context: context of the page, must contain request.
         """
-        self.save_request_data(request, value, prefix)
-
-        template = getattr(self.meta, 'template', None)
-        if not template:
+        if not getattr(self.meta, 'template', None):
             raise ValueError("This block must have a template")
 
+        self.extract_request_data_from_context(value, context)
+
+        context.update(self.pre_render_action())
+
         try:
-            response = self.pre_render_action()
-            if response:
-                return response
-        except ValidationError as e:
-            for error in e.messages:
-                messages.error(request, "{}".format(error))
-
-        context = self.get_context(value)
-
-        if getattr(self.block_value, _RENDERED_CONTENT, None):
-            raise ValueError("Rendered content already exists, this is a bug")
-        setattr(value, _RENDERED_CONTENT, render_to_string(template, context))
-        self.after_render_cleanup()
+            return super(WagbootBlockMixin, self).render(value, context=context)
+        finally:
+            self.after_render_cleanup()
 
 
 class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
@@ -139,26 +126,12 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
     """
     Block that can process form data during rendering.
 
-    It must be rendered with {% active_block block %} template tag.
+    Creates and includes form into context.
 
-    Instead of Block.render(value) this block will be rendered and processed
-    in ActiveBlock.process_and_render(value, page_context) method.
-
-    This method should look for 'POST' data submission, do operations and optionally can redirect whole page.
-
-    Redirect is done by raising ActiveBlockRedirect(url) exception in process_and_render(..)
-
-    It works only if page itself has used @active_block_redirect decorator on .serve().
-
-    Generally page with active blocks should be rendered like this:
-
-    {% for block in page.body %}
-        {% if block.is_active %}
-            {% active_block block %}
-        {% else %}
-            process blocks as usual.
-        {% endif %}
-    {% endfor %}
+    If request method is POST, form will have data to validate (form will use prefix
+    to distinguish between several forms on one page).
+    If form validates block will raise WagbootRedirectException with success_url as url.
+    This exception must be caught by WagbootRedirectMiddleware which will do actual redirect.
 
     Form block should be created this way:
 
@@ -180,25 +153,22 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
     def get_success_message(self):
         return self.success_message
 
-    def get_media(self, request, value, prefix):
-        media = super(FormBlockMixin, self).get_media(request, value, prefix)
-        form_class = self.get_form_class()
-        if form_class:
-            form_media = self.get_form(form_class).media
-            if media:
-                media += form_media
-            else:
-                media = form_media
-        return media
+    def get_success_url(self):
+        raise NotImplementedError("Subclass must provide get_success_url and should not call super.")
 
     def form_invalid(self, form):
         """
-        form_invalid can show error message, but should not return anything.
-        Page will be re-rendered by page model.
-        :return: (must not return anything)
+        Subclass may override this method, but should not return anything.
+        Block will re-render itself with validation errors.
         """
-        # Not calling super, because it calls render_to_response which does not exist here
+        # Not calling super because it calls render_to_response which is not needed
         return
+
+    def form_valid(self, form):
+        success_message = self.get_success_message()
+        if success_message:
+            messages.success(self.request, success_message)
+        raise RedirectException(url=self.get_success_url())
 
     def _is_data_present(self):
         """
@@ -206,8 +176,6 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         If not - this POST request is not for this form.
         :return: bool
         """
-        if not self.prefix:
-            return True
         return any(key.startswith(self.prefix) for key in self.request.POST.keys())
 
     def get_form_kwargs(self):
@@ -232,39 +200,38 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         :return FormHelper
         """
         helper = FormHelper()
-        helper.include_media = False
         submit_text = self.get_submit_text()
         if submit_text:
             helper.add_input(Submit('submit_button', submit_text))
         return helper
 
     def pre_render_action(self):
-        self.form = self.get_form()
-        if hasattr(self.form, 'helper'):
-            # We are including media separately into page's head, don't need to include twice
-            self.form.helper.include_media = False
-        else:
-            self.form.helper = self.get_form_helper()
+        """
+        Creates and processes form.
+        form is returned as additional context.
+        """
+        form = self.get_form()
+        if not hasattr(form, 'helper'):
+            form.helper = self.get_form_helper()
+
+        # In the ideal world we need to include form's media in the extrahead.
+        # But it is very tricky. And I already really tried hard to do so.
+        # Previous generation of these blocks was not ideal in other regards and was dropped.
+        # So unless there are big troubles in having <link ..> in the body, we should not try to include media in
+        # the head.
+        form.helper.include_media = True
+
         if self.request.method.lower() == 'post' and self._is_data_present():
-            if self.form.is_valid():
-                success_message = self.get_success_message()
-                if success_message:
-                    messages.success(self.request, success_message)
-                return self.form_valid(self.form)
+            if form.is_valid():
+                should_be_none = self.form_valid(form)
             else:
-                form_invalid_result = self.form_invalid(self.form)
-                if form_invalid_result:
-                    warnings.warn("form_invalid in form blocks should not return anything. Page will be re-rendered "
-                                  "by a page model. Got: {}".format(force_str(form_invalid_result)))
-
-    def after_render_cleanup(self):
-        super(FormBlockMixin, self).after_render_cleanup()
-        del self.form
-
-    def get_context(self, value):
-        context = super(FormBlockMixin, self).get_context(value)
+                should_be_none = self.form_invalid(form)
+            if should_be_none is not None:
+                warnings.warn("form_valid and form_invalid in form blocks should not return anything. "
+                              "Block will be re-rendered by render(). Got: {}".format(force_str(should_be_none)))
+        context = super(FormBlockMixin, self).pre_render_action()
         context.update({
-            'form': self.form
+            'form': form
         })
         return context
 
@@ -343,7 +310,8 @@ class LogoutBlock(WagbootBlockMixin, blocks.StructBlock):
         if self.request.method.lower() == 'post' and self.request.POST.get('{}-logout'.format(self.prefix)):
             logout(self.request)
             messages.success(self.request, "You have been logged out")
-            return HttpResponseRedirect(self.get_success_url())
+            raise RedirectException(self.get_success_url())
+        return super(LogoutBlock, self).pre_render_action()
 
 
 class Empty(object):

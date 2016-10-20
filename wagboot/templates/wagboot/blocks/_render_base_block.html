@@ -60,10 +60,7 @@
       {% endfor %}
     </div>
   </div>
-{% elif block.block.self_render %}
-{# Block with .self_render should render his container himself. #}
-{{ block }}
-{% else %}
+{% elif block.block_type == choices.BLOCK_TEXT_SMALL_IMAGE or block.block_type == choices.BLOCK_SMALL_IMAGE_TEXT or block.block_type == choices.BLOCK_IMAGE_TEXT or block.block_type == choices.BLOCK_TEXT_IMAGE or block.block_type == choices.BLOCK_TEXT %}
 <div class="{{ settings.wagboot.WebsiteSettings.container_class|default:" container" }}">
 <div class="row generic-page-block generic-page-block-{{ block.block_type }}">
   {% if block.block_type == choices.BLOCK_TEXT_SMALL_IMAGE %}
@@ -91,4 +88,8 @@
   {% endif %}
 </div>
 </div>
+{% else %}
+{# Block with .self_render should render his container himself. #}
+{% include_block block %}
+  {#{ block }#}
 {% endif %}
