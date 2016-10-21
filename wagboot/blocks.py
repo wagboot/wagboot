@@ -25,8 +25,8 @@ from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
 from wagtail.wagtailimages.blocks import ImageChooserBlock
 
 from wagboot import choices
-from wagboot.exceptions import RedirectException
 from wagboot.forms import SetPasswordForm, PasswordResetForm
+from wagboot.redirects import mark_request_for_redirect
 
 
 class WagbootBlockMixin(object):
@@ -49,14 +49,13 @@ class WagbootBlockMixin(object):
     def pre_render_action(self):
         """
         Will be called before rendering template.
-        Can do some actions and raise RedirectException if it blocks needs redirect to another page.
+        Can do some actions and redirect page if its block needs redirect to another page.
         Should be overridden, by default does nothing.
 
         Can return dict which will be included in the context.
 
-        :return: dict, additional context to be included during rendering.
+        :return: (optional) dict, additional context to be included during rendering.
         """
-        return {}
 
     def after_render_cleanup(self):
         """
@@ -96,15 +95,22 @@ class WagbootBlockMixin(object):
 
         return 'block-{counter}'.format(counter=self.request._wagboot_block_counter)
 
+    def redirect_page(self, url, permanent=False):
+        mark_request_for_redirect(self.request, url, permanent)
+
     def render(self, value, context=None):
         """
         Return a text rendering of 'value', suitable for display on templates.
 
         Will call those methods (in this order):
-        self.extract_request_data_from_context - to save request and actual block value for rendering
-        self.pre_render_action - to process request (form or anything), this method may raise RedirectException
-        self.after_render_cleanup - to delete saved request and other values on the object. Because this object will
-                                    be reused for same blocks on the page.
+        - extract_request_data_from_context():
+            - saves request and actual block value for rendering
+        - pre_render_action():
+            - can do some processing of the GET or POST
+            - may return dict to add to context before rendering
+            - may redirect page (by calling redirect_page())
+        - after_render_cleanup:
+            - deletes saved request and other values on the object (actual block instance is reused between requests)
 
         :param value: Block value
         :param context: context of the page, must contain request.
@@ -114,7 +120,12 @@ class WagbootBlockMixin(object):
 
         self.extract_request_data_from_context(value, context)
 
-        context.update(self.pre_render_action())
+        add_context = self.pre_render_action()
+        if add_context:
+            if isinstance(add_context, dict):
+                context.update(add_context)
+            else:
+                raise ValueError("pre_render_action may only return dict or nothing, got: {}".format(add_context))
 
         try:
             return super(WagbootBlockMixin, self).render(value, context=context)
@@ -130,16 +141,7 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
 
     If request method is POST, form will have data to validate (form will use prefix
     to distinguish between several forms on one page).
-    If form validates block will raise WagbootRedirectException with success_url as url.
-    This exception must be caught by WagbootRedirectMiddleware which will do actual redirect.
-
-    Form block should be created this way:
-
-    import six
-    from wagtail.wagtailcore import blocks
-
-    class MyStructFormBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
-        form_class = ...
+    If form validates block will default form_valid() requests redirect to get_success_url()
 
     Form needs to have .helper from crispy_forms
     If it does not have one - it will be created by get_form_helper() method.
@@ -168,7 +170,7 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         success_message = self.get_success_message()
         if success_message:
             messages.success(self.request, success_message)
-        raise RedirectException(url=self.get_success_url())
+        self.redirect_page(self.get_success_url())
 
     def _is_data_present(self):
         """
@@ -324,8 +326,9 @@ class LogoutBlock(WagbootBlockMixin, blocks.StructBlock):
         if self.request.method.lower() == 'post' and self.request.POST.get('{}-logout'.format(self.prefix)):
             logout(self.request)
             messages.success(self.request, "You have been logged out")
-            raise RedirectException(self.get_success_url())
-        return super(LogoutBlock, self).pre_render_action()
+            self.redirect_page(self.get_success_url())
+        else:
+            return super(LogoutBlock, self).pre_render_action()
 
 
 class Empty(object):
