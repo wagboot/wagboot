@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import warnings
 from email.utils import formataddr
 
 import six
-import warnings
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
@@ -19,7 +19,7 @@ from django.template.loader import render_to_string
 from django.utils.encoding import force_text, force_bytes, force_str
 from django.utils.http import is_safe_url, urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.safestring import mark_safe
-from django.views.generic.edit import FormMixin, FormMixinBase
+from django.views.generic.edit import FormMixin
 from wagtail.wagtailcore import blocks
 from wagtail.wagtailcore.blocks import DeclarativeSubBlocksMetaclass
 from wagtail.wagtailimages.blocks import ImageChooserBlock
@@ -120,10 +120,6 @@ class WagbootBlockMixin(object):
             return super(WagbootBlockMixin, self).render(value, context=context)
         finally:
             self.after_render_cleanup()
-
-
-class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
-    pass
 
 
 class FormBlockMixin(WagbootBlockMixin, FormMixin):
@@ -239,8 +235,22 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         })
         return context
 
+try:
+    # In Django <1.10 FormMixin has a meta class, and StructBlock has a meta class.
+    # So our base must be complicated.
+    from django.views.generic.edit import FormMixinBase
 
-class FormWithLegendBlock(six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)):
+    class MetaFormBlockMixin(FormMixinBase, DeclarativeSubBlocksMetaclass):
+        pass
+
+    _BaseFormWithLegend = six.with_metaclass(MetaFormBlockMixin, FormBlockMixin, blocks.StructBlock)
+except ImportError:
+    # But in Django 1.10 FormMixin is simpler.
+    class _BaseFormWithLegend(FormBlockMixin, blocks.StructBlock):
+        pass
+
+
+class FormWithLegendBlock(_BaseFormWithLegend):
     success_page = blocks.PageChooserBlock(help_text="Where to redirect after successful processing")
     legend = blocks.RichTextBlock(required=False, help_text="Text to the right of the form")
 
