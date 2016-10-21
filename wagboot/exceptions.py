@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+from django.http import HttpResponsePermanentRedirect
+from django.http import HttpResponseRedirect
+
 
 class RedirectException(Exception):
     """
@@ -14,5 +17,11 @@ class RedirectException(Exception):
 
     def __str__(self):
         return "This exception is not an error. It is required for wagboot blocks to redirect user after " \
-               "some actions. To enable this functionality you need to enable wagboot.middleware.RedirectMiddleware " \
-               "(redirect url: {self.url}, permanent: {self.permanent})".format(self=self)
+               "some actions. To enable this functionality you need to include wagboot blocks into page subclasses " \
+               "of BaseGenericPage only. " \
+               "(redirect was for url: {self.url}, permanent: {self.permanent})".format(self=self)
+
+    def create_redirect_response(self):
+        if self.permanent:
+            return HttpResponsePermanentRedirect(redirect_to=self.url)
+        return HttpResponseRedirect(redirect_to=self.url)
