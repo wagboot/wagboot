@@ -26,7 +26,6 @@ from wagtail.wagtailsnippets.models import register_snippet
 
 from wagboot import blocks
 from wagboot import choices
-from wagboot.exceptions import RedirectException
 from wagboot.managers import MenuManager, CssManager
 
 
@@ -328,15 +327,6 @@ class BaseGenericPage(Page):
             if bottom_menu:
                 return bottom_menu
             page = page.get_parent()
-
-    def serve(self, request, *args, **kwargs):
-        response = super(BaseGenericPage, self).serve(request, *args, **kwargs)
-        if hasattr(response, 'render') and callable(response.render):
-            try:
-                response = response.render()
-            except RedirectException as e:
-                return e.create_redirect_response()
-        return response
 
 
 class AbstractGenericPage(BaseGenericPage):
