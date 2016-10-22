@@ -56,6 +56,7 @@ class WagbootBlockMixin(object):
 
         :return: (optional) dict, additional context to be included during rendering.
         """
+        return {}
 
     def after_render_cleanup(self):
         """
