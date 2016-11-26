@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import warnings
 from email.utils import formataddr
 
 import six
+import warnings
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
@@ -205,7 +205,7 @@ class FormBlockMixin(WagbootBlockMixin, FormMixin):
         helper = FormHelper()
         submit_text = self.get_submit_text()
         if submit_text:
-            helper.add_input(Submit('submit_button', submit_text))
+            helper.add_input(Submit('{}-submit_button'.format(self.prefix), submit_text))
         return helper
 
     def pre_render_action(self):
